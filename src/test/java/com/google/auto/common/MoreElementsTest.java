@@ -287,9 +287,11 @@ public class MoreElementsTest {
     }
 
     private abstract static class ParentClass {
+        @SuppressWarnings("unused")
         static void staticMethod() {
         }
 
+        @SuppressWarnings("unused")
         abstract String foo();
 
         @SuppressWarnings("unused")
@@ -298,15 +300,19 @@ public class MoreElementsTest {
     }
 
     private interface ParentInterface {
+        @SuppressWarnings("unused")
         static void staticMethod() {
         }
 
-        abstract int bar();
+        @SuppressWarnings("unused")
+        int bar();
 
-        abstract int bar(long x);
+        @SuppressWarnings("unused")
+        int bar(long x);
     }
 
     private abstract static class Child extends ParentClass implements ParentInterface {
+        @SuppressWarnings("unused")
         static void staticMethod() {
         }
 
@@ -315,11 +321,14 @@ public class MoreElementsTest {
             return 0;
         }
 
+        @SuppressWarnings("unused")
         abstract void baz();
 
+        @SuppressWarnings("unused")
         void buh(int x) {
         }
 
+        @SuppressWarnings("unused")
         void buh(int x, int y) {
         }
     }
@@ -354,7 +363,6 @@ public class MoreElementsTest {
         TypeMirror intMirror = types.getPrimitiveType(TypeKind.INT);
         TypeMirror longMirror = types.getPrimitiveType(TypeKind.LONG);
         TypeElement childType = elements.getTypeElement(Child.class.getCanonicalName());
-        @SuppressWarnings("deprecation")
         Set<ExecutableElement> childTypeMethods =
                 MoreElements.getLocalAndInheritedMethods(childType, types, elements);
         Set<ExecutableElement> objectMethods = visibleMethodsFromObject();
@@ -377,7 +385,6 @@ public class MoreElementsTest {
         TypeMirror intMirror = types.getPrimitiveType(TypeKind.INT);
         TypeMirror longMirror = types.getPrimitiveType(TypeKind.LONG);
         TypeElement childType = elements.getTypeElement(Child.class.getCanonicalName());
-        @SuppressWarnings("deprecation")
         Set<ExecutableElement> childTypeMethods =
                 MoreElements.getAllMethods(childType, types, elements);
         Set<ExecutableElement> objectMethods = allMethodsFromObject();
@@ -402,7 +409,7 @@ public class MoreElementsTest {
         Types types = compilation.getTypes();
         TypeMirror intMirror = types.getPrimitiveType(TypeKind.INT);
         TypeMirror longMirror = types.getPrimitiveType(TypeKind.LONG);
-        Set<ExecutableElement> methods = new HashSet<ExecutableElement>();
+        Set<ExecutableElement> methods = new HashSet<>();
         for (ExecutableElement method : ElementFilter.methodsIn(objectElement.getEnclosedElements())) {
             if (method.getModifiers().contains(Modifier.PUBLIC)
                     || method.getModifiers().contains(Modifier.PROTECTED)) {
@@ -423,8 +430,7 @@ public class MoreElementsTest {
         Types types = compilation.getTypes();
         TypeMirror intMirror = types.getPrimitiveType(TypeKind.INT);
         TypeMirror longMirror = types.getPrimitiveType(TypeKind.LONG);
-        Set<ExecutableElement> methods = new HashSet<>();
-        methods.addAll(ElementFilter.methodsIn(objectElement.getEnclosedElements()));
+        Set<ExecutableElement> methods = new HashSet<>(ElementFilter.methodsIn(objectElement.getEnclosedElements()));
         assertThat(methods)
                 .containsAtLeast(
                         getMethod(Object.class, "clone"),
