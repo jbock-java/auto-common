@@ -242,6 +242,7 @@ public class BasicAnnotationProcessorTest {
 
     @Retention(RetentionPolicy.SOURCE)
     public @interface ReferencesAClass {
+        @SuppressWarnings("unused")
         Class<?> value();
     }
 
@@ -484,17 +485,13 @@ public class BasicAnnotationProcessorTest {
     }
 
     private static void generateClass(Filer filer, String generatedClassName) {
-        PrintWriter writer = null;
-        try {
-            writer = new PrintWriter(filer.createSourceFile("test." + generatedClassName).openWriter());
+        try (PrintWriter writer = new PrintWriter(
+                filer.createSourceFile("test." + generatedClassName)
+                        .openWriter())) {
             writer.println("package test;");
             writer.println("public class " + generatedClassName + " {}");
         } catch (IOException e) {
             throw new RuntimeException(e);
-        } finally {
-            if (writer != null) {
-                writer.close();
-            }
         }
     }
 }

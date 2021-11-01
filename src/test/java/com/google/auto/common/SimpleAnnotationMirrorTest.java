@@ -43,12 +43,15 @@ public class SimpleAnnotationMirrorTest {
     }
 
     @interface AnnotationWithDefault {
+        @SuppressWarnings("unused")
         int value() default 3;
     }
 
     @interface MultipleValues {
+        @SuppressWarnings("unused")
         int value1();
 
+        @SuppressWarnings("unused")
         int value2();
     }
 

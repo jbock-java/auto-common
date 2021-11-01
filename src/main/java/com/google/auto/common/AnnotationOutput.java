@@ -22,7 +22,6 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleAnnotationValueVisitor8;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -146,8 +145,7 @@ final class AnnotationOutput {
         @Override
         public Void visitAnnotation(AnnotationMirror a, StringBuilder sb) {
             sb.append('@').append(formatType(a.getAnnotationType()));
-            // TODO is this copy necessary?
-            Map<ExecutableElement, AnnotationValue> map = new HashMap<>(a.getElementValues());
+            Map<? extends ExecutableElement, ? extends AnnotationValue> map = a.getElementValues();
             if (!map.isEmpty()) {
                 sb.append('(');
                 Optional<AnnotationValue> shortForm = shortForm(map);
@@ -155,7 +153,7 @@ final class AnnotationOutput {
                     this.visit(maybeShorten(shortForm.get()), sb);
                 } else {
                     String sep = "";
-                    for (Map.Entry<ExecutableElement, AnnotationValue> entry : map.entrySet()) {
+                    for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : map.entrySet()) {
                         sb.append(sep).append(entry.getKey().getSimpleName()).append(" = ");
                         sep = ", ";
                         this.visit(maybeShorten(entry.getValue()), sb);
@@ -193,7 +191,7 @@ final class AnnotationOutput {
 
     // We can shorten @Annot(value = 23) to @Annot(23).
     private static Optional<AnnotationValue> shortForm(
-            Map<ExecutableElement, AnnotationValue> values) {
+            Map<? extends ExecutableElement, ? extends AnnotationValue> values) {
         if (values.size() == 1
                 && Iterables.getOnlyElement(values.keySet()).getSimpleName().contentEquals("value")) {
             return Optional.of(Iterables.getOnlyElement(values.values()));

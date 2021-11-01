@@ -48,9 +48,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 import static javax.lang.model.type.TypeKind.NONE;
 import static javax.lang.model.type.TypeKind.VOID;
 import static org.junit.Assert.assertThrows;
@@ -96,7 +98,7 @@ public class MoreTypesTest {
         TypeMirror containedInObject = types.asMemberOf(containerOfObject, contained);
         TypeMirror containedInString = types.asMemberOf(containerOfString, contained);
         EquivalenceTester<TypeMirror> tester =
-                EquivalenceTester.<TypeMirror>of(GuavaEquivalence.of(MoreTypes.equivalence()))
+                EquivalenceTester.of(GuavaEquivalence.of(MoreTypes.equivalence()))
                         .addEquivalenceGroup(types.getNullType())
                         .addEquivalenceGroup(types.getNoType(NONE))
                         .addEquivalenceGroup(types.getNoType(VOID))
@@ -160,11 +162,12 @@ public class MoreTypesTest {
                         ExecutableElementsGroupD.class,
                         ExecutableElementsGroupE.class);
         for (Class<?> testClass : testClasses) {
-            ImmutableList<TypeMirror> equivalenceGroup =
-                    FluentIterable.from(
-                                    elements.getTypeElement(testClass.getCanonicalName()).getEnclosedElements())
-                            .transform(Element::asType)
-                            .toList();
+            List<TypeMirror> equivalenceGroup =
+                    elements.getTypeElement(testClass.getCanonicalName())
+                            .getEnclosedElements()
+                            .stream()
+                            .map(Element::asType)
+                            .collect(toList());
             tester.addEquivalenceGroup(equivalenceGroup);
         }
 

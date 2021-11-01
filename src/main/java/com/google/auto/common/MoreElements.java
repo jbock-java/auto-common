@@ -35,14 +35,12 @@ import javax.lang.model.util.Types;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toCollection;
 import static javax.lang.model.element.ElementKind.PACKAGE;
@@ -459,7 +457,7 @@ public final class MoreElements {
 
     private static Set<ExecutableElement> getAllMethods(
             TypeElement type, Overrides overrides) {
-        Map<String, Set<ExecutableElement>> methodMap = new LinkedHashMap<>();
+        MultiMap<String, ExecutableElement> methodMap = new MultiMap<>();
         getAllMethods(type, methodMap);
         // Find methods that are overridden. We do this using `Elements.overrides`, which means
         // that it is inherently a quadratic operation, since we have to compare every method against
@@ -467,7 +465,7 @@ public final class MoreElements {
         // a method cannot override another method with a different name, and (b) making sure that
         // methods in ancestor types precede those in descendant types, which means we only have to
         // check a method against the ones that follow it in that order.
-        Set<ExecutableElement> overridden = new LinkedHashSet<>();
+        Set<ExecutableElement> overridden = new HashSet<>();
         for (Collection<ExecutableElement> methods : methodMap.values()) {
             List<ExecutableElement> methodList = new ArrayList<>(methods);
             for (int i = 0; i < methodList.size(); i++) {
@@ -481,8 +479,7 @@ public final class MoreElements {
                 }
             }
         }
-        return methodMap.values().stream()
-                .flatMap(Set::stream)
+        return methodMap.flatValues().stream()
                 .filter(m -> !overridden.contains(m))
                 .collect(toCollection(LinkedHashSet::new));
     }
@@ -494,7 +491,7 @@ public final class MoreElements {
     // including methods that override or overload one another. Within those methods, those in
     // ancestor types always precede those in descendant types.
     private static void getAllMethods(
-            TypeElement type, Map<String, Set<ExecutableElement>> methods) {
+            TypeElement type, MultiMap<String, ExecutableElement> methods) {
         for (TypeMirror superInterface : type.getInterfaces()) {
             getAllMethods(MoreTypes.asTypeElement(superInterface), methods);
         }
@@ -504,13 +501,7 @@ public final class MoreElements {
             getAllMethods(MoreTypes.asTypeElement(type.getSuperclass()), methods);
         }
         for (ExecutableElement method : ElementFilter.methodsIn(type.getEnclosedElements())) {
-            methods.compute(method.getSimpleName().toString(), (k, v) -> {
-                if (v == null) {
-                    v = new LinkedHashSet<>();
-                }
-                v.add(method);
-                return v;
-            });
+            methods.put(method.getSimpleName().toString(), method);
         }
     }
 
