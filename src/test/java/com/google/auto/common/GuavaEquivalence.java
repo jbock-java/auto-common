@@ -10,12 +10,12 @@ final class GuavaEquivalence {
 
             @Override
             protected boolean doEquivalent(T a, T b) {
-                return equivalence.doEquivalent(a, b);
+                return equivalence.test(a, b);
             }
 
             @Override
             protected int doHash(T o) {
-                return equivalence.doHash(o);
+                return equivalence.hash(o);
             }
         };
     }

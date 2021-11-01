@@ -30,7 +30,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.google.auto.common.MoreElements.isAnnotationPresent;
-import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 
@@ -94,10 +93,8 @@ public final class AnnotationMirrors {
     public static Map<ExecutableElement, AnnotationValue> getAnnotationValuesWithDefaults(
             AnnotationMirror annotation) {
         Map<ExecutableElement, AnnotationValue> values = new HashMap<>();
-        // Use unmodifiableMap to eliminate wildcards, which cause issues for our nullness checker.
-        @SuppressWarnings("GetElementValues")
-        Map<ExecutableElement, AnnotationValue> declaredValues =
-                unmodifiableMap(annotation.getElementValues());
+        Map<? extends ExecutableElement, ? extends AnnotationValue> declaredValues =
+                annotation.getElementValues();
         for (ExecutableElement method :
                 ElementFilter.methodsIn(annotation.getAnnotationType().asElement().getEnclosedElements())) {
             // Must iterate and put in this order, to ensure consistency in generated code.

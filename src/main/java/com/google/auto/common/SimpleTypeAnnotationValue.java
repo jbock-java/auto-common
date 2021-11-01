@@ -16,8 +16,6 @@
 
 package com.google.auto.common;
 
-import com.google.auto.common.base.Preconditions;
-
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.AnnotationValueVisitor;
 import javax.lang.model.type.TypeMirror;

@@ -12,35 +12,33 @@
  * the License.
  */
 
-package com.google.auto.common.base;
+package com.google.auto.common;
 
-import static com.google.auto.common.base.Strings.lenientFormat;
-
-public final class Preconditions {
+final class Preconditions {
     private Preconditions() {
     }
 
-    public static void checkArgument(boolean expression) {
+    static void checkArgument(boolean expression) {
         if (!expression) {
             throw new IllegalArgumentException();
         }
     }
 
-    public static void checkArgument(
+    static void checkArgument(
             boolean b, String errorMessageTemplate, Object p1) {
         if (!b) {
-            throw new IllegalArgumentException(lenientFormat(errorMessageTemplate, p1));
+            throw new IllegalArgumentException(String.format(errorMessageTemplate, p1));
         }
     }
 
-    public static void checkArgument(
+    static void checkArgument(
             boolean b, String errorMessageTemplate, Object p1, Object p2) {
         if (!b) {
-            throw new IllegalArgumentException(lenientFormat(errorMessageTemplate, p1, p2));
+            throw new IllegalArgumentException(String.format(errorMessageTemplate, p1, p2));
         }
     }
 
-    public static void checkState(boolean expression) {
+    static void checkState(boolean expression) {
         if (!expression) {
             throw new IllegalStateException();
         }

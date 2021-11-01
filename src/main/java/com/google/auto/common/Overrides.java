@@ -15,8 +15,6 @@
  */
 package com.google.auto.common;
 
-import com.google.auto.common.base.Preconditions;
-
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -38,7 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.auto.common.base.Preconditions.checkState;
+import static com.google.auto.common.Preconditions.checkState;
 import static java.util.stream.Collectors.toList;
 
 /**

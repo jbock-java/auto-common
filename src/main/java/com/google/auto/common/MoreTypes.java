@@ -15,8 +15,6 @@
  */
 package com.google.auto.common;
 
-import com.google.auto.common.base.Preconditions;
-
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -39,7 +37,6 @@ import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleTypeVisitor8;
 import javax.lang.model.util.Types;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -284,18 +281,17 @@ public final class MoreTypes {
                 List<? extends TypeMirror> aArguments,
                 Element b,
                 List<? extends TypeMirror> bArguments) {
-            // TODO are these copies necessary?
+            @SuppressWarnings("unchecked")
             ComparedElements comparedElements =
                     new ComparedElements(
-                            a, new ArrayList<>(aArguments),
-                            b, new ArrayList<>(bArguments));
+                            a, (List<TypeMirror>) aArguments,
+                            b, (List<TypeMirror>) bArguments);
             Set<ComparedElements> newVisiting = new HashSet<>(visiting);
             newVisiting.add(comparedElements);
             return newVisiting;
         }
     }
 
-    @SuppressWarnings("TypeEquals")
     private static boolean equal(
             TypeMirror a, TypeMirror b, Set<ComparedElements> visiting) {
         if (a == b) {
@@ -311,7 +307,6 @@ public final class MoreTypes {
         // The javac implementation of ExecutableType, at least in some versions, does not take thrown
         // exceptions into account in its equals implementation, so avoid this optimization for
         // ExecutableType.
-        @SuppressWarnings("TypesEquals")
         boolean equal = a.equals(b);
         if (equal && !(a instanceof ExecutableType)) {
             return true;

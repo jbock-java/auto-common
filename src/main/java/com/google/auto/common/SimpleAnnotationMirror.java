@@ -16,8 +16,6 @@
 
 package com.google.auto.common;
 
-import com.google.auto.common.base.Preconditions;
-
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.ElementKind;
@@ -25,7 +23,6 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,8 +74,7 @@ public final class SimpleAnnotationMirror implements AnnotationMirror {
                 missingMembers.isEmpty(), "namedValues is missing entries for: %s", missingMembers);
 
         this.annotationType = annotationType;
-        // TODO is this copy necessary?
-        this.namedValues = new HashMap<>(namedValues);
+        this.namedValues = namedValues;
         this.elementValues =
                 methodsIn(annotationType.getEnclosedElements()).stream()
                         .collect(Collectors.toUnmodifiableMap(e -> e, e -> values.get(e.getSimpleName().toString())));

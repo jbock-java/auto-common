@@ -27,15 +27,27 @@ import java.util.function.BiPredicate;
  * @since 10.0 (<a href="https://github.com/google/guava/wiki/Compatibility">mostly
  *     source-compatible</a> since 4.0)
  */
-abstract class Equivalence<T> implements BiPredicate<T, T> {
+public abstract class Equivalence<T> implements BiPredicate<T, T> {
     /** Constructor for use by subclasses. */
     protected Equivalence() {
     }
 
     /**
-     * @deprecated Provided only to satisfy the {@link BiPredicate} interface; use {@link #test}
-     *     instead.
-     * @since 21.0
+     * Returns {@code true} if the given objects are considered equivalent.
+     *
+     * <p>This method describes an <i>equivalence relation</i> on object references, meaning that for
+     * all references {@code x}, {@code y}, and {@code z} (any of which may be null):
+     *
+     * <ul>
+     *   <li>{@code equivalent(x, x)} is true (<i>reflexive</i> property)
+     *   <li>{@code equivalent(x, y)} and {@code equivalent(y, x)} each return the same result
+     *       (<i>symmetric</i> property)
+     *   <li>If {@code equivalent(x, y)} and {@code equivalent(y, z)} are both true, then {@code
+     *       equivalent(x, z)} is also true (<i>transitive</i> property)
+     * </ul>
+     *
+     * <p>Note that all calls to {@code equivalent(x, y)} are expected to return the same result as
+     * long as neither {@code x} nor {@code y} is modified.
      */
     @Override
     public final boolean test(T a, T b) {
