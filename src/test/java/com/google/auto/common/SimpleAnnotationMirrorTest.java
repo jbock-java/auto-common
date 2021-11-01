@@ -16,7 +16,6 @@
 
 package com.google.auto.common;
 
-import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
@@ -82,7 +81,7 @@ public class SimpleAnnotationMirrorTest {
     TypeElement withDefaults = getTypeElement(AnnotationWithDefault.class);
     AnnotationMirror annotation = SimpleAnnotationMirror.of(withDefaults);
     assertThat(annotation.getElementValues()).hasSize(1);
-    assertThat(getOnlyElement(annotation.getElementValues().values()).getValue()).isEqualTo(3);
+    assertThat(Iterables.getOnlyElement(annotation.getElementValues().values()).getValue()).isEqualTo(3);
   }
 
   @Test
@@ -91,7 +90,7 @@ public class SimpleAnnotationMirrorTest {
     AnnotationMirror annotation =
         SimpleAnnotationMirror.of(withDefaults, ImmutableMap.of("value", intValue(4)));
     assertThat(annotation.getElementValues()).hasSize(1);
-    assertThat(getOnlyElement(annotation.getElementValues().values()).getValue()).isEqualTo(4);
+    assertThat(Iterables.getOnlyElement(annotation.getElementValues().values()).getValue()).isEqualTo(4);
   }
 
   @Test

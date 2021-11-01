@@ -17,7 +17,6 @@
 package com.google.auto.common;
 
 import com.google.auto.common.Overrides.ExplicitOverrides;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.SetMultimap;
@@ -37,14 +36,16 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleElementVisitor8;
 import javax.lang.model.util.Types;
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import static com.google.auto.common.MoreStreams.toImmutableSet;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 import static javax.lang.model.element.ElementKind.PACKAGE;
 import static javax.lang.model.element.Modifier.STATIC;
 
@@ -304,7 +305,7 @@ public final class MoreElements {
      * }</pre>
      */
     public static <T extends Element> Predicate<T> hasModifiers(Modifier... modifiers) {
-        return hasModifiers(ImmutableSet.copyOf(modifiers));
+        return hasModifiers(Set.of(modifiers));
     }
 
     /**
@@ -320,12 +321,7 @@ public final class MoreElements {
      * </pre>
      */
     public static <T extends Element> Predicate<T> hasModifiers(Set<Modifier> modifiers) {
-        return new Predicate<T>() {
-            @Override
-            public boolean test(T input) {
-                return input.getModifiers().containsAll(modifiers);
-            }
-        };
+        return input -> input.getModifiers().containsAll(modifiers);
     }
 
     /**
@@ -382,11 +378,11 @@ public final class MoreElements {
      *
      * @param type the type whose own and inherited methods are to be returned
      * @param typeUtils a {@link Types} object, typically returned by
-     *     {@link javax.annotation.processing.AbstractProcessor#processingEnv processingEnv}<!--
+     *     {@code javax.annotation.processing.AbstractProcessor#processingEnv processingEnv}<!--
      *     -->.{@link javax.annotation.processing.ProcessingEnvironment#getTypeUtils
      *     getTypeUtils()}
      * @param elementUtils an {@link Elements} object, typically returned by
-     *     {@link javax.annotation.processing.AbstractProcessor#processingEnv processingEnv}<!--
+     *     {@code javax.annotation.processing.AbstractProcessor#processingEnv processingEnv}<!--
      *     -->.{@link javax.annotation.processing.ProcessingEnvironment#getElementUtils
      *     getElementUtils()}
      */
@@ -399,14 +395,14 @@ public final class MoreElements {
             TypeElement type, Overrides overrides) {
         PackageElement pkg = getPackage(type);
 
-        ImmutableSet.Builder<ExecutableElement> methods = ImmutableSet.builder();
+        Set<ExecutableElement> methods = new HashSet<>();
         for (ExecutableElement method : getAllMethods(type, overrides)) {
             // Filter out all static and non-visible methods.
             if (!method.getModifiers().contains(STATIC) && methodVisibleFromPackage(method, pkg)) {
                 methods.add(method);
             }
         }
-        return methods.build();
+        return methods;
     }
 
     /**
@@ -474,7 +470,7 @@ public final class MoreElements {
         // check a method against the ones that follow it in that order.
         Set<ExecutableElement> overridden = new LinkedHashSet<ExecutableElement>();
         for (Collection<ExecutableElement> methods : methodMap.asMap().values()) {
-            List<ExecutableElement> methodList = ImmutableList.copyOf(methods);
+            List<ExecutableElement> methodList = new ArrayList<>(methods);
             for (int i = 0; i < methodList.size(); i++) {
                 ExecutableElement methodI = methodList.get(i);
                 for (int j = i + 1; j < methodList.size(); j++) {
@@ -488,7 +484,7 @@ public final class MoreElements {
         }
         return methodMap.values().stream()
                 .filter(m -> !overridden.contains(m))
-                .collect(toImmutableSet());
+                .collect(toUnmodifiableSet());
     }
 
     // Add to `methods` the static and instance methods from `type`. This means all methods from

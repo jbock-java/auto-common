@@ -15,8 +15,6 @@
  */
 package com.google.auto.common;
 
-import com.google.common.collect.ImmutableList;
-
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.VariableElement;
@@ -26,8 +24,8 @@ import javax.lang.model.util.SimpleAnnotationValueVisitor8;
 import java.util.List;
 import java.util.function.Function;
 
-import static com.google.auto.common.MoreStreams.toImmutableList;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * A utility class for working with {@link AnnotationValue} instances.
@@ -341,7 +339,7 @@ public final class AnnotationValues {
     }
 
     private static final class ArrayVisitor<T>
-            extends SimpleAnnotationValueVisitor8<ImmutableList<T>, Void> {
+            extends SimpleAnnotationValueVisitor8<List<T>, Void> {
         final Function<AnnotationValue, T> visitT;
 
         ArrayVisitor(Function<AnnotationValue, T> visitT) {
@@ -349,13 +347,13 @@ public final class AnnotationValues {
         }
 
         @Override
-        public ImmutableList<T> defaultAction(Object o, Void unused) {
+        public List<T> defaultAction(Object o, Void unused) {
             throw new IllegalStateException("Expected an array, got instead: " + o);
         }
 
         @Override
-        public ImmutableList<T> visitArray(List<? extends AnnotationValue> values, Void unused) {
-            return values.stream().map(visitT).collect(toImmutableList());
+        public List<T> visitArray(List<? extends AnnotationValue> values, Void unused) {
+            return values.stream().map(visitT).collect(toUnmodifiableList());
         }
     }
 
@@ -367,7 +365,7 @@ public final class AnnotationValues {
      *
      * @throws IllegalArgumentException if the value is not an array of classes.
      */
-    public static ImmutableList<DeclaredType> getTypeMirrors(AnnotationValue value) {
+    public static List<DeclaredType> getTypeMirrors(AnnotationValue value) {
         return TYPE_MIRRORS_VISITOR.visit(value);
     }
 
@@ -379,31 +377,31 @@ public final class AnnotationValues {
      *
      * @throws IllegalArgumentException if the value if not an array of annotations.
      */
-    public static ImmutableList<AnnotationMirror> getAnnotationMirrors(AnnotationValue value) {
+    public static List<AnnotationMirror> getAnnotationMirrors(AnnotationValue value) {
         return ANNOTATION_MIRRORS_VISITOR.visit(value);
     }
 
     private static final ArrayVisitor<VariableElement> ENUMS_VISITOR =
             new ArrayVisitor<>(AnnotationValues::getEnum);
 
+    private static final ArrayVisitor<String> STRINGS_VISITOR =
+            new ArrayVisitor<>(AnnotationValues::getString);
+
     /**
      * Returns the value as a list of enums.
      *
      * @throws IllegalArgumentException if the value is not an array of enums.
      */
-    public static ImmutableList<VariableElement> getEnums(AnnotationValue value) {
+    public static List<VariableElement> getEnums(AnnotationValue value) {
         return ENUMS_VISITOR.visit(value);
     }
-
-    private static final ArrayVisitor<String> STRINGS_VISITOR =
-            new ArrayVisitor<>(AnnotationValues::getString);
 
     /**
      * Returns the value as a list of strings.
      *
      * @throws IllegalArgumentException if the value is not an array of strings.
      */
-    public static ImmutableList<String> getStrings(AnnotationValue value) {
+    public static List<String> getStrings(AnnotationValue value) {
         return STRINGS_VISITOR.visit(value);
     }
 
@@ -415,7 +413,7 @@ public final class AnnotationValues {
      *
      * @throws IllegalArgumentException if the value is not an array of ints.
      */
-    public static ImmutableList<Integer> getInts(AnnotationValue value) {
+    public static List<Integer> getInts(AnnotationValue value) {
         return INTS_VISITOR.visit(value);
     }
 
@@ -427,7 +425,7 @@ public final class AnnotationValues {
      *
      * @throws IllegalArgumentException if the value is not an array of longs.
      */
-    public static ImmutableList<Long> getLongs(AnnotationValue value) {
+    public static List<Long> getLongs(AnnotationValue value) {
         return LONGS_VISITOR.visit(value);
     }
 
@@ -439,7 +437,7 @@ public final class AnnotationValues {
      *
      * @throws IllegalArgumentException if the value is not an array of bytes.
      */
-    public static ImmutableList<Byte> getBytes(AnnotationValue value) {
+    public static List<Byte> getBytes(AnnotationValue value) {
         return BYTES_VISITOR.visit(value);
     }
 
@@ -451,7 +449,7 @@ public final class AnnotationValues {
      *
      * @throws IllegalArgumentException if the value is not an array of shorts.
      */
-    public static ImmutableList<Short> getShorts(AnnotationValue value) {
+    public static List<Short> getShorts(AnnotationValue value) {
         return SHORTS_VISITOR.visit(value);
     }
 
@@ -463,7 +461,7 @@ public final class AnnotationValues {
      *
      * @throws IllegalArgumentException if the value is not an array of floats.
      */
-    public static ImmutableList<Float> getFloats(AnnotationValue value) {
+    public static List<Float> getFloats(AnnotationValue value) {
         return FLOATS_VISITOR.visit(value);
     }
 
@@ -475,7 +473,7 @@ public final class AnnotationValues {
      *
      * @throws IllegalArgumentException if the value is not an array of doubles.
      */
-    public static ImmutableList<Double> getDoubles(AnnotationValue value) {
+    public static List<Double> getDoubles(AnnotationValue value) {
         return DOUBLES_VISITOR.visit(value);
     }
 
@@ -487,7 +485,7 @@ public final class AnnotationValues {
      *
      * @throws IllegalArgumentException if the value is not an array of booleans.
      */
-    public static ImmutableList<Boolean> getBooleans(AnnotationValue value) {
+    public static List<Boolean> getBooleans(AnnotationValue value) {
         return BOOLEANS_VISITOR.visit(value);
     }
 
@@ -499,7 +497,7 @@ public final class AnnotationValues {
      *
      * @throws IllegalArgumentException if the value is not an array of chars.
      */
-    public static ImmutableList<Character> getChars(AnnotationValue value) {
+    public static List<Character> getChars(AnnotationValue value) {
         return CHARS_VISITOR.visit(value);
     }
 
@@ -511,7 +509,7 @@ public final class AnnotationValues {
      *
      * @throws IllegalArgumentException if the value is not an array.
      */
-    public static ImmutableList<AnnotationValue> getAnnotationValues(AnnotationValue value) {
+    public static List<AnnotationValue> getAnnotationValues(AnnotationValue value) {
         return ANNOTATION_VALUES_VISITOR.visit(value);
     }
 

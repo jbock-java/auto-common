@@ -16,10 +16,7 @@
 
 package com.google.auto.common;
 
-import com.google.common.base.Joiner;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableMap;
-import org.checkerframework.checker.nullness.qual.Nullable;
+import com.google.auto.common.base.Preconditions;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
@@ -28,11 +25,13 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
+import java.util.stream.Collectors;
 
-import static com.google.auto.common.MoreStreams.toImmutableMap;
 import static javax.lang.model.util.ElementFilter.methodsIn;
 
 /**
@@ -45,11 +44,12 @@ import static javax.lang.model.util.ElementFilter.methodsIn;
  */
 public final class SimpleAnnotationMirror implements AnnotationMirror {
     private final TypeElement annotationType;
-    private final ImmutableMap<String, ? extends AnnotationValue> namedValues;
-    private final ImmutableMap<ExecutableElement, ? extends AnnotationValue> elementValues;
+    private final Map<String, ? extends AnnotationValue> namedValues;
+    private final Map<ExecutableElement, ? extends AnnotationValue> elementValues;
 
     private SimpleAnnotationMirror(
-            TypeElement annotationType, Map<String, ? extends AnnotationValue> namedValues) {
+            TypeElement annotationType,
+            Map<String, ? extends AnnotationValue> namedValues) {
         Preconditions.checkArgument(
                 annotationType.getKind().equals(ElementKind.ANNOTATION_TYPE),
                 "annotationType must be an annotation: %s",
@@ -77,10 +77,11 @@ public final class SimpleAnnotationMirror implements AnnotationMirror {
                 missingMembers.isEmpty(), "namedValues is missing entries for: %s", missingMembers);
 
         this.annotationType = annotationType;
-        this.namedValues = ImmutableMap.copyOf(namedValues);
+        // TODO is this copy necessary?
+        this.namedValues = new HashMap<>(namedValues);
         this.elementValues =
                 methodsIn(annotationType.getEnclosedElements()).stream()
-                        .collect(toImmutableMap(e -> e, e -> values.get(e.getSimpleName().toString())));
+                        .collect(Collectors.toUnmodifiableMap(e -> e, e -> values.get(e.getSimpleName().toString())));
     }
 
     /**
@@ -88,7 +89,7 @@ public final class SimpleAnnotationMirror implements AnnotationMirror {
      * {@code annotationType} has any annotation members, they must have default values.
      */
     public static AnnotationMirror of(TypeElement annotationType) {
-        return of(annotationType, ImmutableMap.of());
+        return of(annotationType, Map.of());
     }
 
     /**
@@ -115,16 +116,15 @@ public final class SimpleAnnotationMirror implements AnnotationMirror {
     public String toString() {
         StringBuilder builder = new StringBuilder("@").append(annotationType.getQualifiedName());
         if (!namedValues.isEmpty()) {
-            builder
-                    .append('(')
-                    .append(Joiner.on(", ").withKeyValueSeparator(" = ").join(namedValues))
-                    .append(')');
+            StringJoiner joiner = new StringJoiner(", ");
+            namedValues.forEach((k, v) -> joiner.add(k + " = " + v));
+            builder.append('(').append(joiner).append(')');
         }
         return builder.toString();
     }
 
     @Override
-    public boolean equals(@Nullable Object other) {
+    public boolean equals(Object other) {
         return other instanceof AnnotationMirror
                 && AnnotationMirrors.equivalence().equivalent(this, (AnnotationMirror) other);
     }

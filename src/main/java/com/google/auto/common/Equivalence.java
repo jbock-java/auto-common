@@ -30,10 +30,6 @@ import static java.util.Objects.requireNonNull;
  * @since 10.0 (<a href="https://github.com/google/guava/wiki/Compatibility">mostly
  *     source-compatible</a> since 4.0)
  */
-/*
- * The type parameter is <T> rather than <T extends @Nullable> so that we can use T in the
- * doEquivalent and doHash methods to indicate that the parameter cannot be null.
- */
 abstract class Equivalence<T> implements BiPredicate<T, T> {
     /** Constructor for use by subclasses. */
     protected Equivalence() {

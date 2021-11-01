@@ -15,10 +15,6 @@
  */
 package com.google.auto.common;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.AnnotationValueVisitor;
@@ -26,6 +22,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleAnnotationValueVisitor8;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -51,22 +48,20 @@ final class AnnotationOutput {
      * class and two concrete subclasses.
      */
     private static class SourceFormVisitor
-            extends SimpleAnnotationValueVisitor8<@Nullable Void, StringBuilder> {
+            extends SimpleAnnotationValueVisitor8<Void, StringBuilder> {
 
         private String formatType(TypeMirror typeMirror) {
             return asTypeElement(typeMirror).getQualifiedName().toString();
         }
 
         @Override
-        protected @Nullable
-        Void defaultAction(Object value, StringBuilder sb) {
+        protected Void defaultAction(Object value, StringBuilder sb) {
             sb.append(value);
             return null;
         }
 
         @Override
-        public @Nullable
-        Void visitArray(List<? extends AnnotationValue> values, StringBuilder sb) {
+        public Void visitArray(List<? extends AnnotationValue> values, StringBuilder sb) {
             sb.append('{');
             String sep = "";
             for (AnnotationValue value : values) {
@@ -79,36 +74,31 @@ final class AnnotationOutput {
         }
 
         @Override
-        public @Nullable
-        Void visitByte(byte b, StringBuilder sb) {
+        public Void visitByte(byte b, StringBuilder sb) {
             sb.append("(byte) ").append(b);
             return null;
         }
 
         @Override
-        public @Nullable
-        Void visitShort(short s, StringBuilder sb) {
+        public Void visitShort(short s, StringBuilder sb) {
             sb.append("(short) ").append(s);
             return null;
         }
 
         @Override
-        public @Nullable
-        Void visitChar(char c, StringBuilder sb) {
+        public Void visitChar(char c, StringBuilder sb) {
             appendQuoted(sb, c);
             return null;
         }
 
         @Override
-        public @Nullable
-        Void visitLong(long i, StringBuilder sb) {
+        public Void visitLong(long i, StringBuilder sb) {
             sb.append(i).append('L');
             return null;
         }
 
         @Override
-        public @Nullable
-        Void visitDouble(double d, StringBuilder sb) {
+        public Void visitDouble(double d, StringBuilder sb) {
             if (Double.isNaN(d)) {
                 sb.append("Double.NaN");
             } else if (d == Double.POSITIVE_INFINITY) {
@@ -122,8 +112,7 @@ final class AnnotationOutput {
         }
 
         @Override
-        public @Nullable
-        Void visitFloat(float f, StringBuilder sb) {
+        public Void visitFloat(float f, StringBuilder sb) {
             if (Float.isNaN(f)) {
                 sb.append("Float.NaN");
             } else if (f == Float.POSITIVE_INFINITY) {
@@ -137,32 +126,28 @@ final class AnnotationOutput {
         }
 
         @Override
-        public @Nullable
-        Void visitEnumConstant(VariableElement c, StringBuilder sb) {
+        public Void visitEnumConstant(VariableElement c, StringBuilder sb) {
             sb.append(formatType(c.asType())).append('.').append(c.getSimpleName());
             return null;
         }
 
         @Override
-        public @Nullable
-        Void visitString(String s, StringBuilder sb) {
+        public Void visitString(String s, StringBuilder sb) {
             appendQuoted(sb, s);
             return null;
         }
 
         @Override
-        public @Nullable
-        Void visitType(TypeMirror classConstant, StringBuilder sb) {
+        public Void visitType(TypeMirror classConstant, StringBuilder sb) {
             sb.append(formatType(classConstant)).append(".class");
             return null;
         }
 
         @Override
-        public @Nullable
-        Void visitAnnotation(AnnotationMirror a, StringBuilder sb) {
+        public Void visitAnnotation(AnnotationMirror a, StringBuilder sb) {
             sb.append('@').append(formatType(a.getAnnotationType()));
-            ImmutableMap<ExecutableElement, AnnotationValue> map =
-                    ImmutableMap.copyOf(a.getElementValues());
+            // TODO is this copy necessary?
+            Map<ExecutableElement, AnnotationValue> map = new HashMap<>(a.getElementValues());
             if (!map.isEmpty()) {
                 sb.append('(');
                 Optional<AnnotationValue> shortForm = shortForm(map);

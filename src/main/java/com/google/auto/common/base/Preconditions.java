@@ -12,9 +12,9 @@
  * the License.
  */
 
-package com.google.common.base;
+package com.google.auto.common.base;
 
-import static com.google.common.base.Strings.lenientFormat;
+import static com.google.auto.common.base.Strings.lenientFormat;
 
 public final class Preconditions {
     private Preconditions() {

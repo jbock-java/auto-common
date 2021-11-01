@@ -18,6 +18,7 @@ package com.google.auto.common;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toUnmodifiableList;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -38,6 +39,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 /** Tests {@link AnnotationValues}. */
 @RunWith(JUnit4.class)
@@ -174,7 +178,7 @@ public final class AnnotationValuesTest {
     TypeMirror insideClassA = getTypeElement(InsideClassA.class).asType();
     TypeMirror insideClassB = getTypeElement(InsideClassB.class).asType();
     AnnotationValue value = AnnotationMirrors.getAnnotationValue(annotationMirror, "classValues");
-    ImmutableList<DeclaredType> valueElements = AnnotationValues.getTypeMirrors(value);
+    List<DeclaredType> valueElements = AnnotationValues.getTypeMirrors(value);
     assertThat(valueElements)
         .comparingElementsUsing(Correspondence.from(types::isSameType, "has Same Type"))
         .containsExactly(insideClassA, insideClassB)
@@ -197,20 +201,20 @@ public final class AnnotationValuesTest {
     TypeElement insideAnnotation = getTypeElement(InsideAnnotation.class);
     AnnotationValue value =
         AnnotationMirrors.getAnnotationValue(annotationMirror, "insideAnnotationValues");
-    ImmutableList<AnnotationMirror> annotationMirrors =
+    List<AnnotationMirror> annotationMirrors =
         AnnotationValues.getAnnotationMirrors(value);
-    ImmutableList<Element> valueElements =
+    List<Element> valueElements =
         annotationMirrors.stream()
             .map(AnnotationMirror::getAnnotationType)
             .map(DeclaredType::asElement)
-            .collect(toImmutableList());
+            .collect(toUnmodifiableList());
     assertThat(valueElements).containsExactly(insideAnnotation, insideAnnotation);
-    ImmutableList<Object> valuesStoredInAnnotation =
+    List<Object> valuesStoredInAnnotation =
         annotationMirrors.stream()
             .map(
                 annotationMirror ->
                     AnnotationMirrors.getAnnotationValue(annotationMirror, "value").getValue())
-            .collect(toImmutableList());
+            .collect(toUnmodifiableList());
     assertThat(valuesStoredInAnnotation).containsExactly(20, 21).inOrder();
   }
 
@@ -243,7 +247,7 @@ public final class AnnotationValuesTest {
   @Test
   public void getAnnotationValues() {
     AnnotationValue value = AnnotationMirrors.getAnnotationValue(annotationMirror, "intValues");
-    ImmutableList<AnnotationValue> values = AnnotationValues.getAnnotationValues(value);
+    List<AnnotationValue> values = AnnotationValues.getAnnotationValues(value);
     assertThat(values)
         .comparingElementsUsing(Correspondence.transforming(AnnotationValue::getValue, "has value"))
         .containsExactly(1, 2)
@@ -410,10 +414,10 @@ public final class AnnotationValuesTest {
     return elements.getTypeElement(clazz.getCanonicalName());
   }
 
-  private static ImmutableList<String> getEnumNames(ImmutableList<VariableElement> values) {
+  private static List<String> getEnumNames(List<VariableElement> values) {
     return values.stream()
         .map(VariableElement::getSimpleName)
         .map(Name::toString)
-        .collect(toImmutableList());
+        .collect(toUnmodifiableList());
   }
 }
