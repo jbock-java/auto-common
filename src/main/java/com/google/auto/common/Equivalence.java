@@ -14,10 +14,7 @@
 
 package com.google.auto.common;
 
-import java.io.Serializable;
 import java.util.function.BiPredicate;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * A strategy for determining whether two instances are considered equivalent, and for computing
@@ -36,23 +33,12 @@ abstract class Equivalence<T> implements BiPredicate<T, T> {
     }
 
     /**
-     * Returns {@code true} if the given objects are considered equivalent.
-     *
-     * <p>This method describes an <i>equivalence relation</i> on object references, meaning that for
-     * all references {@code x}, {@code y}, and {@code z} (any of which may be null):
-     *
-     * <ul>
-     *   <li>{@code equivalent(x, x)} is true (<i>reflexive</i> property)
-     *   <li>{@code equivalent(x, y)} and {@code equivalent(y, x)} each return the same result
-     *       (<i>symmetric</i> property)
-     *   <li>If {@code equivalent(x, y)} and {@code equivalent(y, z)} are both true, then {@code
-     *       equivalent(x, z)} is also true (<i>transitive</i> property)
-     * </ul>
-     *
-     * <p>Note that all calls to {@code equivalent(x, y)} are expected to return the same result as
-     * long as neither {@code x} nor {@code y} is modified.
+     * @deprecated Provided only to satisfy the {@link BiPredicate} interface; use {@link #test}
+     *     instead.
+     * @since 21.0
      */
-    final boolean equivalent(T a, T b) {
+    @Override
+    public final boolean test(T a, T b) {
         if (a == b) {
             return true;
         }
@@ -63,21 +49,10 @@ abstract class Equivalence<T> implements BiPredicate<T, T> {
     }
 
     /**
-     * @deprecated Provided only to satisfy the {@link BiPredicate} interface; use {@link #equivalent}
-     *     instead.
-     * @since 21.0
-     */
-    @Deprecated
-    @Override
-    public final boolean test(T t, T u) {
-        return equivalent(t, u);
-    }
-
-    /**
      * Implemented by the user to determine whether {@code a} and {@code b} are considered equivalent,
-     * subject to the requirements specified in {@link #equivalent}.
+     * subject to the requirements specified in {@link #test}.
      *
-     * <p>This method should not be called except by {@link #equivalent}. When {@link #equivalent}
+     * <p>This method should not be called except by {@link #test}. When {@link #test}
      * calls this method, {@code a} and {@code b} are guaranteed to be distinct, non-null instances.
      *
      * @since 10.0 (previously, subclasses would override equivalent())
@@ -118,95 +93,6 @@ abstract class Equivalence<T> implements BiPredicate<T, T> {
      * @since 10.0 (previously, subclasses would override hash())
      */
     protected abstract int doHash(T t);
-
-    /**
-     * Returns a wrapper of {@code reference} that implements {@link Wrapper#equals(Object)
-     * Object.equals()} such that {@code wrap(a).equals(wrap(b))} if and only if {@code equivalent(a,
-     * b)}.
-     *
-     * @since 10.0
-     */
-    public final <S extends T> Wrapper<S> wrap(S reference) {
-        return new Wrapper<>(this, reference);
-    }
-
-    /**
-     * Wraps an object so that {@link #equals(Object)} and {@link #hashCode()} delegate to an {@link
-     * Equivalence}.
-     *
-     * <p>For example, given an {@link Equivalence} for {@link String strings} named {@code equiv}
-     * that tests equivalence using their lengths:
-     *
-     * <pre>{@code
-     * equiv.wrap("a").equals(equiv.wrap("b")) // true
-     * equiv.wrap("a").equals(equiv.wrap("hello")) // false
-     * }</pre>
-     *
-     * <p>Note in particular that an equivalence wrapper is never equal to the object it wraps.
-     *
-     * <pre>{@code
-     * equiv.wrap(obj).equals(obj) // always false
-     * }</pre>
-     *
-     * @since 10.0
-     */
-    public static final class Wrapper<T> implements Serializable {
-        private final Equivalence<? super T> equivalence;
-        private final T reference;
-
-        private Wrapper(Equivalence<? super T> equivalence, T reference) {
-            this.equivalence = requireNonNull(equivalence);
-            this.reference = reference;
-        }
-
-        /** Returns the (possibly null) reference wrapped by this instance. */
-        public T get() {
-            return reference;
-        }
-
-        /**
-         * Returns {@code true} if {@link Equivalence#equivalent(Object, Object)} applied to the wrapped
-         * references is {@code true} and both wrappers use the {@link Object#equals(Object) same}
-         * equivalence.
-         */
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == this) {
-                return true;
-            }
-            if (obj instanceof Wrapper) {
-                Wrapper<?> that = (Wrapper<?>) obj; // note: not necessarily a Wrapper<T>
-
-                if (this.equivalence.equals(that.equivalence)) {
-                    /*
-                     * We'll accept that as sufficient "proof" that either equivalence should be able to
-                     * handle either reference, so it's safe to circumvent compile-time type checking.
-                     */
-                    @SuppressWarnings("unchecked")
-                    Equivalence<Object> equivalence = (Equivalence<Object>) this.equivalence;
-                    return equivalence.equivalent(this.reference, that.reference);
-                }
-            }
-            return false;
-        }
-
-        /** Returns the result of {@link Equivalence#hash(Object)} applied to the wrapped reference. */
-        @Override
-        public int hashCode() {
-            return equivalence.hash(reference);
-        }
-
-        /**
-         * Returns a string representation for this equivalence wrapper. The form of this string
-         * representation is not specified.
-         */
-        @Override
-        public String toString() {
-            return equivalence + ".wrap(" + reference + ")";
-        }
-
-        private static final long serialVersionUID = 0;
-    }
 
     /**
      * Returns an equivalence over iterables based on the equivalence of their elements. More

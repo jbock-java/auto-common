@@ -32,7 +32,7 @@ final class PairwiseEquivalence<E, T extends E> extends Equivalence<Iterable<T>>
         Iterator<T> iteratorB = iterableB.iterator();
 
         while (iteratorA.hasNext() && iteratorB.hasNext()) {
-            if (!elementEquivalence.equivalent(iteratorA.next(), iteratorB.next())) {
+            if (!elementEquivalence.test(iteratorA.next(), iteratorB.next())) {
                 return false;
             }
         }

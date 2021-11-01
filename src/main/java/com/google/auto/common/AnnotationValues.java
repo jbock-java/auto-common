@@ -67,7 +67,7 @@ public final class AnnotationValues {
                                                 @Override
                                                 public Boolean visitAnnotation(
                                                         AnnotationMirror right, AnnotationMirror left) {
-                                                    return AnnotationMirrors.equivalence().equivalent(left, right);
+                                                    return AnnotationMirrors.equivalence().test(left, right);
                                                 }
                                             },
                                             left);
@@ -94,7 +94,7 @@ public final class AnnotationValues {
                                                         List<? extends AnnotationValue> left) {
                                                     return AnnotationValues.equivalence()
                                                             .pairwise()
-                                                            .equivalent(
+                                                            .test(
                                                                     (List<AnnotationValue>) left, (List<AnnotationValue>) right);
                                                 }
                                             },
@@ -112,7 +112,7 @@ public final class AnnotationValues {
 
                                                 @Override
                                                 public Boolean visitType(TypeMirror right, TypeMirror left) {
-                                                    return MoreTypes.equivalence().equivalent(left, right);
+                                                    return MoreTypes.equivalence().test(left, right);
                                                 }
                                             },
                                             left);

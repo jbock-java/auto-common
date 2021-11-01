@@ -15,7 +15,6 @@
  */
 package com.google.auto.common;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.testing.EquivalenceTester;
 import com.google.common.truth.Correspondence;
 import com.google.testing.compile.CompilationRule;
@@ -35,6 +34,7 @@ import javax.lang.model.util.SimpleAnnotationValueVisitor6;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Map;
+import java.util.Set;
 
 import static com.google.auto.common.AnnotationMirrorsTest.SimpleEnum.BLAH;
 import static com.google.auto.common.AnnotationMirrorsTest.SimpleEnum.FOO;
@@ -163,7 +163,7 @@ public class AnnotationMirrorsTest {
     @Test
     public void testEquivalences() {
         EquivalenceTester<AnnotationMirror> tester =
-                EquivalenceTester.of(AnnotationMirrors.equivalence());
+                EquivalenceTester.of(GuavaEquivalence.of(AnnotationMirrors.equivalence()));
 
         tester.addEquivalenceGroup(
                 annotationOn(SimplyAnnotated.class), annotationOn(AlsoSimplyAnnotated.class));
@@ -392,7 +392,7 @@ public class AnnotationMirrorsTest {
     }
 
     private void getAnnotatedAnnotationsAsserts(
-            ImmutableSet<? extends AnnotationMirror> annotatedAnnotations) {
+            Set<? extends AnnotationMirror> annotatedAnnotations) {
         assertThat(annotatedAnnotations)
                 .comparingElementsUsing(
                         Correspondence.transforming(

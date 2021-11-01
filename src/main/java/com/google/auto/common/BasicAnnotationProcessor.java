@@ -45,8 +45,7 @@ import java.util.stream.Stream;
 import static com.google.auto.common.MoreElements.asExecutable;
 import static com.google.auto.common.MoreElements.asPackage;
 import static com.google.auto.common.SuperficialValidation.validateElement;
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toCollection;
 import static javax.lang.model.element.ElementKind.PACKAGE;
 import static javax.tools.Diagnostic.Kind.ERROR;
 
@@ -139,21 +138,21 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
     private Set<TypeElement> getSupportedAnnotationTypeElements() {
         return steps.stream()
                 .flatMap(step -> getSupportedAnnotationTypeElements(step).stream())
-                .collect(collectingAndThen(toList(), HashSet::new));
+                .collect(toCollection(LinkedHashSet::new));
     }
 
     private Set<TypeElement> getSupportedAnnotationTypeElements(Step step) {
         return step.annotations().stream()
                 .map(elements::getTypeElement)
                 .filter(Objects::nonNull)
-                .collect(collectingAndThen(toList(), HashSet::new));
+                .collect(toCollection(LinkedHashSet::new));
     }
 
     @Override
     public final Set<String> getSupportedAnnotationTypes() {
         return steps.stream()
                 .flatMap(step -> step.annotations().stream())
-                .collect(collectingAndThen(toList(), HashSet::new));
+                .collect(toCollection(LinkedHashSet::new));
     }
 
     @Override
@@ -194,10 +193,8 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
             if (stepElements.isEmpty()) {
                 elementsDeferredBySteps.remove(step);
             } else {
-                Set<? extends Element> rejectedElements =
-                        step.process(toClassNameKeyedMultimap(stepElements));
-                elementsDeferredBySteps.replace(
-                        step, rejectedElements.stream().map(ElementName::forAnnotatedElement).collect(Collectors.toSet()));
+                Set<ElementName> rejectedElements = step.process(toClassNameKeyedMultimap(stepElements)).stream().map(ElementName::forAnnotatedElement).collect(Collectors.toSet());
+                elementsDeferredBySteps.put(step, rejectedElements);
             }
         }
     }

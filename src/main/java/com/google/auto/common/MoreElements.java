@@ -35,7 +35,6 @@ import javax.lang.model.util.Types;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -43,8 +42,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toUnmodifiableSet;
+import static java.util.stream.Collectors.toCollection;
 import static javax.lang.model.element.ElementKind.PACKAGE;
 import static javax.lang.model.element.Modifier.STATIC;
 
@@ -394,7 +394,7 @@ public final class MoreElements {
             TypeElement type, Overrides overrides) {
         PackageElement pkg = getPackage(type);
 
-        Set<ExecutableElement> methods = new HashSet<>();
+        Set<ExecutableElement> methods = new LinkedHashSet<>();
         for (ExecutableElement method : getAllMethods(type, overrides)) {
             // Filter out all static and non-visible methods.
             if (!method.getModifiers().contains(STATIC) && methodVisibleFromPackage(method, pkg)) {
@@ -467,7 +467,7 @@ public final class MoreElements {
         // a method cannot override another method with a different name, and (b) making sure that
         // methods in ancestor types precede those in descendant types, which means we only have to
         // check a method against the ones that follow it in that order.
-        Set<ExecutableElement> overridden = new LinkedHashSet<ExecutableElement>();
+        Set<ExecutableElement> overridden = new LinkedHashSet<>();
         for (Collection<ExecutableElement> methods : methodMap.values()) {
             List<ExecutableElement> methodList = new ArrayList<>(methods);
             for (int i = 0; i < methodList.size(); i++) {
@@ -484,7 +484,7 @@ public final class MoreElements {
         return methodMap.values().stream()
                 .flatMap(Set::stream)
                 .filter(m -> !overridden.contains(m))
-                .collect(toUnmodifiableSet());
+                .collect(toCollection(LinkedHashSet::new));
     }
 
     // Add to `methods` the static and instance methods from `type`. This means all methods from

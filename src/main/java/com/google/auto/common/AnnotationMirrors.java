@@ -45,10 +45,10 @@ public final class AnnotationMirrors {
                 @Override
                 protected boolean doEquivalent(AnnotationMirror left, AnnotationMirror right) {
                     return MoreTypes.equivalence()
-                            .equivalent(left.getAnnotationType(), right.getAnnotationType())
+                            .test(left.getAnnotationType(), right.getAnnotationType())
                             && AnnotationValues.equivalence()
                             .pairwise()
-                            .equivalent(
+                            .test(
                                     getAnnotationValuesWithDefaults(left).values(),
                                     getAnnotationValuesWithDefaults(right).values());
                 }

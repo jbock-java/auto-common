@@ -126,7 +126,7 @@ public final class SimpleAnnotationMirror implements AnnotationMirror {
     @Override
     public boolean equals(Object other) {
         return other instanceof AnnotationMirror
-                && AnnotationMirrors.equivalence().equivalent(this, (AnnotationMirror) other);
+                && AnnotationMirrors.equivalence().test(this, (AnnotationMirror) other);
     }
 
     @Override

@@ -15,7 +15,6 @@
  */
 package com.google.auto.common;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.truth.Expect;
@@ -45,6 +44,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -269,9 +269,9 @@ public class MoreElementsTest {
             Optional<AnnotationMirror> documented,
             Optional<AnnotationMirror> innerAnnotation,
             Optional<AnnotationMirror> suppressWarnings) {
-        expect.that(documented).isPresent();
-        expect.that(innerAnnotation).isPresent();
-        expect.that(suppressWarnings).isAbsent();
+        assertTrue(documented.isPresent());
+        assertTrue(innerAnnotation.isPresent());
+        assertTrue(suppressWarnings.isEmpty());
 
         Element annotationElement = documented.get().getAnnotationType().asElement();
         expect.that(MoreElements.isType(annotationElement)).isTrue();
