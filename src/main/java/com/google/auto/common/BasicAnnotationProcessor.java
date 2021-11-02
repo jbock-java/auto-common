@@ -116,7 +116,7 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
      * Creates {@linkplain Step processing steps} for this processor. {@link #processingEnv} is
      * guaranteed to be set when this method is invoked.
      */
-    abstract List<? extends Step> steps();
+    protected abstract List<? extends Step> steps();
 
     /** An optional hook for logic to be executed at the end of each round. */
     protected void postRound(RoundEnvironment roundEnv) {
