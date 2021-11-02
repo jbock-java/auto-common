@@ -354,7 +354,7 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
             MultiMap<TypeElement, Element> elements) {
         MultiMap<String, Element> builder = new MultiMap<>();
         elements.stream().forEach(e -> builder.put(e.getKey().getQualifiedName().toString(), e.getValue()));
-        return builder.toMap();
+        return builder.asMap();
     }
 
     /**

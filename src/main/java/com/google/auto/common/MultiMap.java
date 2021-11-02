@@ -6,14 +6,17 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Spliterator;
-import java.util.Spliterators;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static java.util.Spliterators.spliteratorUnknownSize;
+
 /**
- * A simple multimap that remembers the order in which elements were added.
+ * A simple multimap that remembers the insertion order,
+ * as an alternative to a full copy of guava's {@code ImmutableMultimap}.
  *
  * @param <K> key type
  * @param <V> value type
@@ -30,7 +33,7 @@ final class MultiMap<K, V> {
 
     static <K, V> MultiMap<K, V> copyOf(Map<K, Set<V>> map) {
         MultiMap<K, V> result = new MultiMap<>();
-        for (Map.Entry<K, Set<V>> e : map.entrySet()) {
+        for (Entry<K, Set<V>> e : map.entrySet()) {
             for (V v : e.getValue()) {
                 result.put(e.getKey(), v);
             }
@@ -50,6 +53,7 @@ final class MultiMap<K, V> {
         });
     }
 
+    /* Insertion order. */
     Set<V> flatValues() {
         return set;
     }
@@ -58,14 +62,15 @@ final class MultiMap<K, V> {
         return map.values();
     }
 
-    Stream<Map.Entry<K, V>> stream() {
-        Iterator<Map.Entry<K, Set<V>>> iterator = map.entrySet().iterator();
+    /* Entries in no particular order. */
+    Stream<Entry<K, V>> stream() {
+        Iterator<Entry<K, Set<V>>> iterator = map.entrySet().iterator();
         if (!iterator.hasNext()) {
             return Stream.empty();
         }
-        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(new Iterator<>() {
+        return StreamSupport.stream(spliteratorUnknownSize(new Iterator<>() {
 
-            Map.Entry<K, Set<V>> current = iterator.next();
+            Entry<K, Set<V>> current = iterator.next();
             Iterator<V> setIterator = current.getValue().iterator();
 
             @Override
@@ -82,7 +87,7 @@ final class MultiMap<K, V> {
             }
 
             @Override
-            public Map.Entry<K, V> next() {
+            public Entry<K, V> next() {
                 return new SimpleImmutableEntry<>(current.getKey(), setIterator.next());
             }
         }, Spliterator.ORDERED), false);
@@ -92,7 +97,7 @@ final class MultiMap<K, V> {
         return map.isEmpty();
     }
 
-    Map<K, Set<V>> toMap() {
+    Map<K, Set<V>> asMap() {
         return map;
     }
 }
