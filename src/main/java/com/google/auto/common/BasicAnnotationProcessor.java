@@ -119,20 +119,8 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
      */
     abstract List<? extends Step> steps();
 
-    /**
-     * An optional hook for logic to be executed at the end of each round.
-     *
-     * @deprecated use {@link #postRound(RoundEnvironment)} instead
-     */
-    @Deprecated
-    protected void postProcess() {
-    }
-
     /** An optional hook for logic to be executed at the end of each round. */
     protected void postRound(RoundEnvironment roundEnv) {
-        if (!roundEnv.processingOver()) {
-            postProcess();
-        }
     }
 
     private Set<TypeElement> getSupportedAnnotationTypeElements() {
@@ -163,10 +151,9 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
         if (roundEnv.processingOver()) {
             postRound(roundEnv);
             if (!roundEnv.errorRaised()) {
-                Set<ElementName> deferred = new HashSet<>(deferredElementNames);
-                for (Set<ElementName> elementNames : elementsDeferredBySteps.values()) {
-                    deferred.addAll(elementNames);
-                }
+                Set<ElementName> deferred = elementsDeferredBySteps.values().stream()
+                        .flatMap(Set::stream)
+                        .collect(Collectors.toSet());
                 reportMissingElements(deferred);
             }
             return false;
@@ -283,9 +270,8 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
                 new HashMap<>();
         for (ElementName elementName : annotatedElements) {
             Optional<? extends Element> element = elementName.getElement(elements);
-            if (element.isPresent()) {
-                findAnnotatedElements(element.get(), annotationTypes, deferredElements);
-            }
+            element.ifPresent(value ->
+                    findAnnotatedElements(value, annotationTypes, deferredElements));
         }
         return deferredElements;
     }
