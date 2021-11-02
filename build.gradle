@@ -44,8 +44,6 @@ dependencies {
     testImplementation('com.google.testing.compile:compile-testing:0.19')
     testImplementation('com.google.truth:truth:1.1.3')
     testImplementation('com.google.guava:guava-testlib:31.0.1-jre')
-//    testImplementation'org.mockito:mockito-core:4.0.0')
-//    testImplementation('com.google.jimfs:jimfs:1.2')
     testImplementation('org.eclipse.jdt.core.compiler:ecj:4.6.1')
 }
 
@@ -82,17 +80,17 @@ artifacts {
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            artifactId = 'javapoet'
+            artifactId = 'auto-common'
             from components.java
 
             artifact sourcesJar
             artifact javadocJar
 
             pom {
-                name = 'javapoet'
+                name = 'auto-common'
                 packaging = 'jar'
-                description = 'Use beautiful Java code to generate beautiful Java code.'
-                url = 'https://github.com/jbock-java/javapoet'
+                description = 'Common utilities for creating annotation processors.'
+                url = 'https://github.com/jbock-java/auto-common'
 
                 licenses {
                     license {
@@ -108,9 +106,9 @@ publishing {
                     }
                 }
                 scm {
-                    connection = 'scm:git:https://github.com/jbock-java/javapoet.git'
-                    developerConnection = 'scm:git:https://github.com/jbock-java/javapoet.git'
-                    url = 'https://github.com/jbock-java/javapoet'
+                    connection = 'scm:git:https://github.com/jbock-java/auto-common.git'
+                    developerConnection = 'scm:git:https://github.com/jbock-java/auto-common.git'
+                    url = 'https://github.com/jbock-java/auto-common'
                 }
             }
         }
