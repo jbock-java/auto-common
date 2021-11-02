@@ -151,8 +151,10 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
         if (roundEnv.processingOver()) {
             postRound(roundEnv);
             if (!roundEnv.errorRaised()) {
-                Set<ElementName> deferred = elementsDeferredBySteps.values().stream()
-                        .flatMap(Set::stream)
+                Set<ElementName> deferred = Stream.concat(
+                                deferredElementNames.stream(),
+                                elementsDeferredBySteps.values().stream()
+                                        .flatMap(Set::stream))
                         .collect(Collectors.toSet());
                 reportMissingElements(deferred);
             }
