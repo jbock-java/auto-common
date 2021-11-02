@@ -147,7 +147,7 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
     public final boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         // If this is the last round, report all of the missing elements if there
         // were no errors raised in the round; otherwise reporting the missing
-        // elements just adds noise the output.
+        // elements just adds noise to the output.
         if (roundEnv.processingOver()) {
             postRound(roundEnv);
             if (!roundEnv.errorRaised()) {
@@ -169,16 +169,14 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
     }
 
     /** Processes the valid elements, including those previously deferred by each step. */
-    private void process(Map<TypeElement, Set<Element>> validElements) {
+    private void process(MultiMap<TypeElement, Element> validElements) {
         for (Step step : steps) {
             Set<TypeElement> annotationTypes = getSupportedAnnotationTypeElements(step);
-            Map<TypeElement, Set<Element>> stepElements = new HashMap<>(
+            MultiMap<TypeElement, Element> stepElements = MultiMap.copyOf(
                     indexByAnnotation(elementsDeferredBySteps.getOrDefault(step, Set.of()), annotationTypes));
-            validElements.forEach((k, v) -> {
-                if (annotationTypes.contains(k)) {
-                    stepElements.put(k, v);
-                }
-            });
+            validElements.stream()
+                    .filter(e -> annotationTypes.contains(e.getKey()))
+                    .forEach(e -> stepElements.put(e.getKey(), e.getValue()));
             if (stepElements.isEmpty()) {
                 elementsDeferredBySteps.remove(step);
             } else {
@@ -215,7 +213,7 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
      * Returns the valid annotated elements contained in all of the deferred elements. If none are
      * found for a deferred element, defers it again.
      */
-    private Map<TypeElement, Set<Element>> validElements(RoundEnvironment roundEnv) {
+    private MultiMap<TypeElement, Element> validElements(RoundEnvironment roundEnv) {
         List<ElementName> prevDeferredElementNames = new ArrayList<>(deferredElementNames);
         deferredElementNames.clear();
 
@@ -233,7 +231,7 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
             }
         }
 
-        Map<TypeElement, Set<Element>> validElements = new LinkedHashMap<>();
+        MultiMap<TypeElement, Element> validElements = MultiMap.create();
 
         Set<ElementName> validElementNames = new HashSet<>();
 
@@ -249,13 +247,7 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
                                 && validateElement(
                                 element.getKind().equals(PACKAGE) ? element : getEnclosingType(element)));
                 if (isValidElement) {
-                    validElements.compute(annotationType, (k, v) -> {
-                        if (v == null) {
-                            v = new HashSet<>();
-                        }
-                        v.add(element);
-                        return v;
-                    });
+                    validElements.put(annotationType, element);
                     validElementNames.add(elementName);
                 } else {
                     deferredElementNames.add(elementName);
@@ -359,10 +351,10 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
     }
 
     private static Map<String, Set<Element>> toClassNameKeyedMultimap(
-            Map<TypeElement, Set<Element>> elements) {
-        Map<String, Set<Element>> builder = new LinkedHashMap<>(elements.size());
-        elements.forEach((k, v) -> builder.put(k.getQualifiedName().toString(), v));
-        return builder;
+            MultiMap<TypeElement, Element> elements) {
+        MultiMap<String, Element> builder = new MultiMap<>();
+        elements.stream().forEach(e -> builder.put(e.getKey().getQualifiedName().toString(), e.getValue()));
+        return builder.toMap();
     }
 
     /**

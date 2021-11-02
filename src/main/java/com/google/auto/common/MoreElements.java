@@ -457,7 +457,7 @@ public final class MoreElements {
 
     private static Set<ExecutableElement> getAllMethods(
             TypeElement type, Overrides overrides) {
-        MultiMap<String, ExecutableElement> methodMap = new MultiMap<>();
+        MultiMap<String, ExecutableElement> methodMap = MultiMap.create();
         getAllMethods(type, methodMap);
         // Find methods that are overridden. We do this using `Elements.overrides`, which means
         // that it is inherently a quadratic operation, since we have to compare every method against
