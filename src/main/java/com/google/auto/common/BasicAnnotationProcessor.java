@@ -29,7 +29,6 @@ import javax.lang.model.type.ErrorType;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleElementVisitor8;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -261,7 +260,7 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
     private Map<TypeElement, Set<Element>> indexByAnnotation(
             Set<ElementName> annotatedElements, Set<TypeElement> annotationTypes) {
         Map<TypeElement, Set<Element>> deferredElements =
-                new HashMap<>();
+                new LinkedHashMap<>();
         for (ElementName elementName : annotatedElements) {
             Optional<? extends Element> element = elementName.getElement(elements);
             element.ifPresent(value ->
@@ -352,7 +351,7 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
 
     private static Map<String, Set<Element>> toClassNameKeyedMultimap(
             MultiMap<TypeElement, Element> elements) {
-        MultiMap<String, Element> builder = new MultiMap<>();
+        MultiMap<String, Element> builder = MultiMap.create();
         elements.stream().forEach(e -> builder.put(e.getKey().getQualifiedName().toString(), e.getValue()));
         return builder.asMap();
     }

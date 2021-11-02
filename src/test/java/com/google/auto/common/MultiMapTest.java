@@ -45,4 +45,21 @@ public class MultiMapTest {
                 new SimpleImmutableEntry<>("a", 2),
                 new SimpleImmutableEntry<>("b", 1)), entries);
     }
+
+    @Test
+    public void emptySet() {
+        Map<String, Set<Integer>> linkedMap = new LinkedHashMap<>();
+        LinkedHashSet<Integer> aValues = new LinkedHashSet<>();
+        aValues.add(1);
+        aValues.add(2);
+        linkedMap.put("a", aValues);
+        linkedMap.put("b", Set.of());
+        linkedMap.put("c", Set.of(1));
+        MultiMap<String, Integer> m = new MultiMap<>(Set.of(), linkedMap);
+        List<Map.Entry<String, Integer>> entries = m.stream().collect(Collectors.toList());
+        assertEquals(List.of(
+                new SimpleImmutableEntry<>("a", 1),
+                new SimpleImmutableEntry<>("a", 2),
+                new SimpleImmutableEntry<>("c", 1)), entries);
+    }
 }

@@ -24,20 +24,23 @@ import static java.util.Spliterators.spliteratorUnknownSize;
 final class MultiMap<K, V> {
 
     // set of all values, in insertion order
-    private final Set<V> set = new LinkedHashSet<>();
-    private final Map<K, Set<V>> map = new LinkedHashMap<>();
+    private final Set<V> set;
+    private final Map<K, Set<V>> map;
+
+    // visible for testing
+    MultiMap(Set<V> set, Map<K, Set<V>> map) {
+        this.set = set;
+        this.map = map;
+    }
 
     static <K, V> MultiMap<K, V> create() {
-        return new MultiMap<>();
+        return new MultiMap<>(new LinkedHashSet<>(), new LinkedHashMap<>());
     }
 
     static <K, V> MultiMap<K, V> copyOf(Map<K, Set<V>> map) {
-        MultiMap<K, V> result = new MultiMap<>();
-        for (Entry<K, Set<V>> e : map.entrySet()) {
-            for (V v : e.getValue()) {
-                result.put(e.getKey(), v);
-            }
-        }
+        MultiMap<K, V> result = create();
+        map.forEach((k, values) ->
+                values.forEach(v -> result.put(k, v)));
         return result;
     }
 
@@ -53,7 +56,7 @@ final class MultiMap<K, V> {
         });
     }
 
-    /* Insertion order. */
+    /* Values in insertion order. */
     Set<V> flatValues() {
         return set;
     }
@@ -78,12 +81,14 @@ final class MultiMap<K, V> {
                 if (setIterator.hasNext()) {
                     return true;
                 }
-                if (!iterator.hasNext()) {
-                    return false;
+                while (iterator.hasNext()) {
+                    current = iterator.next();
+                    setIterator = current.getValue().iterator();
+                    if (setIterator.hasNext()) {
+                        return true;
+                    }
                 }
-                current = iterator.next();
-                setIterator = current.getValue().iterator();
-                return setIterator.hasNext();
+                return false;
             }
 
             @Override
