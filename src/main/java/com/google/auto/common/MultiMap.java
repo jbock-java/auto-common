@@ -70,15 +70,19 @@ final class MultiMap<K, V> {
 
             @Override
             public boolean hasNext() {
-                return iterator.hasNext() || setIterator.hasNext();
+                if (setIterator.hasNext()) {
+                    return true;
+                }
+                if (!iterator.hasNext()) {
+                    return false;
+                }
+                current = iterator.next();
+                setIterator = current.getValue().iterator();
+                return setIterator.hasNext();
             }
 
             @Override
             public Map.Entry<K, V> next() {
-                if (!setIterator.hasNext()) {
-                    current = iterator.next();
-                    setIterator = current.getValue().iterator();
-                }
                 return new SimpleImmutableEntry<>(current.getKey(), setIterator.next());
             }
         }, Spliterator.ORDERED), false);
