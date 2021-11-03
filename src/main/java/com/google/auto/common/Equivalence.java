@@ -16,6 +16,8 @@ package com.google.auto.common;
 
 import java.util.function.BiPredicate;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * A strategy for determining whether two instances are considered equivalent, and for computing
  * hash codes in a manner consistent with that equivalence. Two examples of equivalences are the
@@ -121,5 +123,92 @@ public abstract class Equivalence<T> implements BiPredicate<T, T> {
         // Ideally, the returned equivalence would support Iterable<? extends T>. However,
         // the need for this is so rare that it's not worth making callers deal with the ugly wildcard.
         return new PairwiseEquivalence<>(this);
+    }
+
+    /**
+     * Returns a wrapper of {@code reference} that implements {@link Wrapper#equals(Object)
+     * Object.equals()} such that {@code wrap(a).equals(wrap(b))} if and only if {@code equivalent(a,
+     * b)}.
+     *
+     * @since 10.0
+     */
+    public final <S extends T> Wrapper<S> wrap(S reference) {
+        return new Wrapper<S>(this, reference);
+    }
+
+    /**
+     * Wraps an object so that {@link #equals(Object)} and {@link #hashCode()} delegate to an {@link
+     * Equivalence}.
+     *
+     * <p>For example, given an {@link Equivalence} for {@link String strings} named {@code equiv}
+     * that tests equivalence using their lengths:
+     *
+     * <pre>{@code
+     * equiv.wrap("a").equals(equiv.wrap("b")) // true
+     * equiv.wrap("a").equals(equiv.wrap("hello")) // false
+     * }</pre>
+     *
+     * <p>Note in particular that an equivalence wrapper is never equal to the object it wraps.
+     *
+     * <pre>{@code
+     * equiv.wrap(obj).equals(obj) // always false
+     * }</pre>
+     *
+     * @since 10.0
+     */
+    public static final class Wrapper<T> {
+        private final Equivalence<? super T> equivalence;
+        private final T reference;
+
+        private Wrapper(Equivalence<? super T> equivalence, T reference) {
+            this.equivalence = requireNonNull(equivalence);
+            this.reference = reference;
+        }
+
+        /** Returns the (possibly null) reference wrapped by this instance. */
+        public T get() {
+            return reference;
+        }
+
+        /**
+         * Returns {@code true} if {@link Equivalence#test(Object, Object)} applied to the wrapped
+         * references is {@code true} and both wrappers use the {@link Object#equals(Object) same}
+         * equivalence.
+         */
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (obj instanceof Wrapper) {
+                Wrapper<?> that = (Wrapper<?>) obj; // note: not necessarily a Wrapper<T>
+
+                if (this.equivalence.equals(that.equivalence)) {
+                    /*
+                     * We'll accept that as sufficient "proof" that either equivalence should be able to
+                     * handle either reference, so it's safe to circumvent compile-time type checking.
+                     */
+                    @SuppressWarnings("unchecked")
+                    Equivalence<Object> equivalence = (Equivalence<Object>) this.equivalence;
+                    return equivalence.test(this.reference, that.reference);
+                }
+            }
+            return false;
+        }
+
+        /** Returns the result of {@link Equivalence#hash(Object)} applied to the wrapped reference. */
+        @Override
+        public int hashCode() {
+            return equivalence.hash(reference);
+        }
+
+        /**
+         * Returns a string representation for this equivalence wrapper. The form of this string
+         * representation is not specified.
+         */
+        @Override
+        public String toString() {
+            return equivalence + ".wrap(" + reference + ")";
+        }
     }
 }
