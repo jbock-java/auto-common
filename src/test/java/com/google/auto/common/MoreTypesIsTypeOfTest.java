@@ -15,6 +15,7 @@
  */
 package com.google.auto.common;
 
+import com.google.common.collect.Iterables;
 import com.google.testing.compile.CompilationRule;
 import org.junit.Before;
 import org.junit.Rule;
@@ -27,6 +28,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -189,9 +191,9 @@ public class MoreTypesIsTypeOfTest {
     public void isTypeOf_fail() {
         assertFalse(
                 MoreTypes.isType(
-                        Iterables.getOnlyElement(typeElementFor(DeclaredVoid.class).getEnclosedElements()).asType()));
+                        getOnlyElement(typeElementFor(DeclaredVoid.class).getEnclosedElements()).asType()));
         TypeMirror method =
-                Iterables.getOnlyElement(typeElementFor(DeclaredVoid.class).getEnclosedElements()).asType();
+                getOnlyElement(typeElementFor(DeclaredVoid.class).getEnclosedElements()).asType();
         try {
             MoreTypes.isTypeOf(String.class, method);
             fail();

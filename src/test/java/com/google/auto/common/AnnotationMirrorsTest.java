@@ -15,6 +15,7 @@
  */
 package com.google.auto.common;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.testing.EquivalenceTester;
 import com.google.common.truth.Correspondence;
 import com.google.testing.compile.CompilationRule;
@@ -34,10 +35,10 @@ import javax.lang.model.util.SimpleAnnotationValueVisitor6;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Map;
-import java.util.Set;
 
 import static com.google.auto.common.AnnotationMirrorsTest.SimpleEnum.BLAH;
 import static com.google.auto.common.AnnotationMirrorsTest.SimpleEnum.FOO;
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
@@ -163,7 +164,7 @@ public class AnnotationMirrorsTest {
     @Test
     public void testEquivalences() {
         EquivalenceTester<AnnotationMirror> tester =
-                EquivalenceTester.of(GuavaEquivalence.of(AnnotationMirrors.equivalence()));
+                EquivalenceTester.of(AnnotationMirrors.equivalence());
 
         tester.addEquivalenceGroup(
                 annotationOn(SimplyAnnotated.class), annotationOn(AlsoSimplyAnnotated.class));
@@ -223,7 +224,7 @@ public class AnnotationMirrorsTest {
                 AnnotationMirrors.getAnnotationValuesWithDefaults(annotationOn(StringyUnset.class))
                         .values();
         String value =
-                Iterables.getOnlyElement(values)
+                getOnlyElement(values)
                         .accept(
                                 new SimpleAnnotationValueVisitor6<String, Void>() {
                                     @Override
@@ -240,7 +241,7 @@ public class AnnotationMirrorsTest {
         Iterable<AnnotationValue> values =
                 AnnotationMirrors.getAnnotationValuesWithDefaults(annotationOn(StringySet.class)).values();
         String value =
-                Iterables.getOnlyElement(values)
+                getOnlyElement(values)
                         .accept(
                                 new SimpleAnnotationValueVisitor6<String, Void>() {
                                     @Override
@@ -278,7 +279,7 @@ public class AnnotationMirrorsTest {
     }
 
     private AnnotationMirror annotationOn(Class<?> clazz) {
-        return Iterables.getOnlyElement(elements.getTypeElement(clazz.getCanonicalName()).getAnnotationMirrors());
+        return getOnlyElement(elements.getTypeElement(clazz.getCanonicalName()).getAnnotationMirrors());
     }
 
     @Retention(RetentionPolicy.RUNTIME)
@@ -392,7 +393,7 @@ public class AnnotationMirrorsTest {
     }
 
     private void getAnnotatedAnnotationsAsserts(
-            Set<? extends AnnotationMirror> annotatedAnnotations) {
+            ImmutableSet<? extends AnnotationMirror> annotatedAnnotations) {
         assertThat(annotatedAnnotations)
                 .comparingElementsUsing(
                         Correspondence.transforming(

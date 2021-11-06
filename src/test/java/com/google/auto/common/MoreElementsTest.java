@@ -15,6 +15,7 @@
  */
 package com.google.auto.common;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.truth.Expect;
@@ -44,9 +45,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.Set;
 
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static java.util.Objects.requireNonNull;
@@ -119,7 +120,7 @@ public class MoreElementsTest {
     @Test
     public void asTypeParameterElement() {
         Element typeParameterElement =
-                Iterables.getOnlyElement(
+                getOnlyElement(
                         compilation
                                 .getElements()
                                 .getTypeElement(List.class.getCanonicalName())
@@ -269,9 +270,9 @@ public class MoreElementsTest {
             Optional<AnnotationMirror> documented,
             Optional<AnnotationMirror> innerAnnotation,
             Optional<AnnotationMirror> suppressWarnings) {
-        assertTrue(documented.isPresent());
-        assertTrue(innerAnnotation.isPresent());
-        assertTrue(suppressWarnings.isEmpty());
+        expect.that(documented).isPresent();
+        expect.that(innerAnnotation).isPresent();
+        expect.that(suppressWarnings).isAbsent();
 
         Element annotationElement = documented.get().getAnnotationType().asElement();
         expect.that(MoreElements.isType(annotationElement)).isTrue();
@@ -287,11 +288,9 @@ public class MoreElementsTest {
     }
 
     private abstract static class ParentClass {
-        @SuppressWarnings("unused")
         static void staticMethod() {
         }
 
-        @SuppressWarnings("unused")
         abstract String foo();
 
         @SuppressWarnings("unused")
@@ -300,19 +299,15 @@ public class MoreElementsTest {
     }
 
     private interface ParentInterface {
-        @SuppressWarnings("unused")
         static void staticMethod() {
         }
 
-        @SuppressWarnings("unused")
-        int bar();
+        abstract int bar();
 
-        @SuppressWarnings("unused")
-        int bar(long x);
+        abstract int bar(long x);
     }
 
     private abstract static class Child extends ParentClass implements ParentInterface {
-        @SuppressWarnings("unused")
         static void staticMethod() {
         }
 
@@ -321,14 +316,11 @@ public class MoreElementsTest {
             return 0;
         }
 
-        @SuppressWarnings("unused")
         abstract void baz();
 
-        @SuppressWarnings("unused")
         void buh(int x) {
         }
 
-        @SuppressWarnings("unused")
         void buh(int x, int y) {
         }
     }
@@ -363,6 +355,7 @@ public class MoreElementsTest {
         TypeMirror intMirror = types.getPrimitiveType(TypeKind.INT);
         TypeMirror longMirror = types.getPrimitiveType(TypeKind.LONG);
         TypeElement childType = elements.getTypeElement(Child.class.getCanonicalName());
+        @SuppressWarnings("deprecation")
         Set<ExecutableElement> childTypeMethods =
                 MoreElements.getLocalAndInheritedMethods(childType, types, elements);
         Set<ExecutableElement> objectMethods = visibleMethodsFromObject();
@@ -385,6 +378,7 @@ public class MoreElementsTest {
         TypeMirror intMirror = types.getPrimitiveType(TypeKind.INT);
         TypeMirror longMirror = types.getPrimitiveType(TypeKind.LONG);
         TypeElement childType = elements.getTypeElement(Child.class.getCanonicalName());
+        @SuppressWarnings("deprecation")
         Set<ExecutableElement> childTypeMethods =
                 MoreElements.getAllMethods(childType, types, elements);
         Set<ExecutableElement> objectMethods = allMethodsFromObject();
@@ -409,7 +403,7 @@ public class MoreElementsTest {
         Types types = compilation.getTypes();
         TypeMirror intMirror = types.getPrimitiveType(TypeKind.INT);
         TypeMirror longMirror = types.getPrimitiveType(TypeKind.LONG);
-        Set<ExecutableElement> methods = new HashSet<>();
+        Set<ExecutableElement> methods = new HashSet<ExecutableElement>();
         for (ExecutableElement method : ElementFilter.methodsIn(objectElement.getEnclosedElements())) {
             if (method.getModifiers().contains(Modifier.PUBLIC)
                     || method.getModifiers().contains(Modifier.PROTECTED)) {
@@ -430,7 +424,8 @@ public class MoreElementsTest {
         Types types = compilation.getTypes();
         TypeMirror intMirror = types.getPrimitiveType(TypeKind.INT);
         TypeMirror longMirror = types.getPrimitiveType(TypeKind.LONG);
-        Set<ExecutableElement> methods = new HashSet<>(ElementFilter.methodsIn(objectElement.getEnclosedElements()));
+        Set<ExecutableElement> methods = new HashSet<>();
+        methods.addAll(ElementFilter.methodsIn(objectElement.getEnclosedElements()));
         assertThat(methods)
                 .containsAtLeast(
                         getMethod(Object.class, "clone"),

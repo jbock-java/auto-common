@@ -15,6 +15,12 @@
  */
 package com.google.auto.common;
 
+import com.google.common.base.Preconditions;
+import com.google.common.base.Verify;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -31,12 +37,9 @@ import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleTypeVisitor8;
 import javax.lang.model.util.Types;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.google.auto.common.Preconditions.checkState;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -221,9 +224,9 @@ abstract class Overrides {
          * implements List<E>}. The parameter types are erased since the purpose of this method is to
          * determine whether two methods are candidates for one to override the other.
          */
-        List<TypeMirror> erasedParameterTypes(ExecutableElement method, TypeElement in) {
+        ImmutableList<TypeMirror> erasedParameterTypes(ExecutableElement method, TypeElement in) {
             if (method.getParameters().isEmpty()) {
-                return List.of();
+                return ImmutableList.of();
             }
             return new TypeSubstVisitor().erasedParameterTypes(method, in);
         }
@@ -245,19 +248,19 @@ abstract class Overrides {
              * mappings for all the variables we see. We could equivalently create a new map for each type
              * we visit, but this is slightly simpler and probably about as performant.
              */
-            private final Map<TypeParameterElement, TypeMirror> typeBindings = new LinkedHashMap<>();
+            private final Map<TypeParameterElement, TypeMirror> typeBindings = Maps.newLinkedHashMap();
 
-            List<TypeMirror> erasedParameterTypes(ExecutableElement method, TypeElement in) {
+            ImmutableList<TypeMirror> erasedParameterTypes(ExecutableElement method, TypeElement in) {
                 if (method.getEnclosingElement().equals(in)) {
-                    List<TypeMirror> params = new ArrayList<>();
+                    ImmutableList.Builder<TypeMirror> params = ImmutableList.builder();
                     for (VariableElement param : method.getParameters()) {
                         params.add(typeUtils.erasure(visit(param.asType())));
                     }
-                    return params;
+                    return params.build();
                 }
                 // Make a list of supertypes we are going to visit recursively: the superclass, if there
                 // is one, plus the superinterfaces.
-                List<TypeMirror> supers = new ArrayList<>();
+                List<TypeMirror> supers = Lists.newArrayList();
                 if (in.getSuperclass().getKind() == TypeKind.DECLARED) {
                     supers.add(in.getSuperclass());
                 }
@@ -271,11 +274,11 @@ abstract class Overrides {
                         // Either the formal type arguments are also empty or `declared` is raw.
                         actuals = formals.stream().map(t -> t.getBounds().get(0)).collect(toList());
                     }
-                    checkState(actuals.size() == formals.size());
+                    Verify.verify(actuals.size() == formals.size());
                     for (int i = 0; i < actuals.size(); i++) {
                         typeBindings.put(formals.get(i), actuals.get(i));
                     }
-                    List<TypeMirror> params = erasedParameterTypes(method, element);
+                    ImmutableList<TypeMirror> params = erasedParameterTypes(method, element);
                     if (params != null) {
                         return params;
                     }
@@ -307,7 +310,7 @@ abstract class Overrides {
                 if (t.getTypeArguments().isEmpty()) {
                     return t;
                 }
-                List<TypeMirror> newArgs = new ArrayList<>();
+                List<TypeMirror> newArgs = Lists.newArrayList();
                 for (TypeMirror arg : t.getTypeArguments()) {
                     newArgs.add(visit(arg));
                 }
@@ -344,13 +347,13 @@ abstract class Overrides {
             TypeElement methodContainer = MoreElements.asType(method.getEnclosingElement());
             Preconditions.checkArgument(methodContainer.getKind().isInterface());
             TypeMirror methodContainerType = typeUtils.erasure(methodContainer.asType());
-            List<TypeElement> types = List.of(in);
+            ImmutableList<TypeElement> types = ImmutableList.of(in);
             // On the first pass through this loop, `types` is the type we're starting from,
             // which might be a class or an interface. On later passes it is a list of direct
             // superinterfaces we saw in the previous pass, but only the ones that were assignable
             // to the interface that `method` appears in.
             while (!types.isEmpty()) {
-                List<TypeElement> newTypes = new ArrayList<>();
+                ImmutableList.Builder<TypeElement> newTypes = ImmutableList.builder();
                 for (TypeElement t : types) {
                     TypeMirror candidateType = typeUtils.erasure(t.asType());
                     if (typeUtils.isAssignable(candidateType, methodContainerType)) {
@@ -367,7 +370,7 @@ abstract class Overrides {
                         }
                     }
                 }
-                types = newTypes;
+                types = newTypes.build();
             }
             return null;
         }
@@ -407,12 +410,12 @@ abstract class Overrides {
             }
         }
 
-        private List<TypeElement> superinterfaces(TypeElement type) {
-            List<TypeElement> types = new ArrayList<>();
+        private ImmutableList<TypeElement> superinterfaces(TypeElement type) {
+            ImmutableList.Builder<TypeElement> types = ImmutableList.builder();
             for (TypeMirror sup : type.getInterfaces()) {
                 types.add(MoreElements.asType(typeUtils.asElement(sup)));
             }
-            return types;
+            return types.build();
         }
 
         private TypeElement asTypeElement(TypeMirror typeMirror) {

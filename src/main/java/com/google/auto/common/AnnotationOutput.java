@@ -15,6 +15,9 @@
  */
 package com.google.auto.common;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Iterables;
+
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.AnnotationValueVisitor;
@@ -145,7 +148,8 @@ final class AnnotationOutput {
         @Override
         public Void visitAnnotation(AnnotationMirror a, StringBuilder sb) {
             sb.append('@').append(formatType(a.getAnnotationType()));
-            Map<? extends ExecutableElement, ? extends AnnotationValue> map = a.getElementValues();
+            ImmutableMap<ExecutableElement, AnnotationValue> map =
+                    ImmutableMap.copyOf(a.getElementValues());
             if (!map.isEmpty()) {
                 sb.append('(');
                 Optional<AnnotationValue> shortForm = shortForm(map);
@@ -153,7 +157,7 @@ final class AnnotationOutput {
                     this.visit(maybeShorten(shortForm.get()), sb);
                 } else {
                     String sep = "";
-                    for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> entry : map.entrySet()) {
+                    for (Map.Entry<ExecutableElement, AnnotationValue> entry : map.entrySet()) {
                         sb.append(sep).append(entry.getKey().getSimpleName()).append(" = ");
                         sep = ", ";
                         this.visit(maybeShorten(entry.getValue()), sb);
@@ -191,7 +195,7 @@ final class AnnotationOutput {
 
     // We can shorten @Annot(value = 23) to @Annot(23).
     private static Optional<AnnotationValue> shortForm(
-            Map<? extends ExecutableElement, ? extends AnnotationValue> values) {
+            Map<ExecutableElement, AnnotationValue> values) {
         if (values.size() == 1
                 && Iterables.getOnlyElement(values.keySet()).getSimpleName().contentEquals("value")) {
             return Optional.of(Iterables.getOnlyElement(values.values()));

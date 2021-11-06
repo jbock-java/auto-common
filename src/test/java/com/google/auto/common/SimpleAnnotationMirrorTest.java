@@ -30,6 +30,7 @@ import javax.lang.model.element.TypeElement;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.google.common.collect.Iterables.getOnlyElement;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
@@ -43,15 +44,12 @@ public class SimpleAnnotationMirrorTest {
     }
 
     @interface AnnotationWithDefault {
-        @SuppressWarnings("unused")
         int value() default 3;
     }
 
     @interface MultipleValues {
-        @SuppressWarnings("unused")
         int value1();
 
-        @SuppressWarnings("unused")
         int value2();
     }
 
@@ -87,7 +85,7 @@ public class SimpleAnnotationMirrorTest {
         TypeElement withDefaults = getTypeElement(AnnotationWithDefault.class);
         AnnotationMirror annotation = SimpleAnnotationMirror.of(withDefaults);
         assertThat(annotation.getElementValues()).hasSize(1);
-        assertThat(Iterables.getOnlyElement(annotation.getElementValues().values()).getValue()).isEqualTo(3);
+        assertThat(getOnlyElement(annotation.getElementValues().values()).getValue()).isEqualTo(3);
     }
 
     @Test
@@ -96,7 +94,7 @@ public class SimpleAnnotationMirrorTest {
         AnnotationMirror annotation =
                 SimpleAnnotationMirror.of(withDefaults, ImmutableMap.of("value", intValue(4)));
         assertThat(annotation.getElementValues()).hasSize(1);
-        assertThat(Iterables.getOnlyElement(annotation.getElementValues().values()).getValue()).isEqualTo(4);
+        assertThat(getOnlyElement(annotation.getElementValues().values()).getValue()).isEqualTo(4);
     }
 
     @Test

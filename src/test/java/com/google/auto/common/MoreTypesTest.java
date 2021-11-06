@@ -15,10 +15,12 @@
  */
 package com.google.auto.common;
 
+import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterables;
 import com.google.common.testing.EquivalenceTester;
 import com.google.common.truth.Expect;
 import com.google.testing.compile.CompilationRule;
@@ -46,16 +48,13 @@ import javax.lang.model.util.Types;
 import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toList;
 import static javax.lang.model.type.TypeKind.NONE;
 import static javax.lang.model.type.TypeKind.VOID;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @RunWith(JUnit4.class)
@@ -97,7 +96,7 @@ public class MoreTypesTest {
         TypeMirror containedInObject = types.asMemberOf(containerOfObject, contained);
         TypeMirror containedInString = types.asMemberOf(containerOfString, contained);
         EquivalenceTester<TypeMirror> tester =
-                EquivalenceTester.of(GuavaEquivalence.of(MoreTypes.equivalence()))
+                EquivalenceTester.<TypeMirror>of(MoreTypes.equivalence())
                         .addEquivalenceGroup(types.getNullType())
                         .addEquivalenceGroup(types.getNoType(NONE))
                         .addEquivalenceGroup(types.getNoType(VOID))
@@ -161,12 +160,11 @@ public class MoreTypesTest {
                         ExecutableElementsGroupD.class,
                         ExecutableElementsGroupE.class);
         for (Class<?> testClass : testClasses) {
-            List<TypeMirror> equivalenceGroup =
-                    elements.getTypeElement(testClass.getCanonicalName())
-                            .getEnclosedElements()
-                            .stream()
-                            .map(Element::asType)
-                            .collect(toList());
+            ImmutableList<TypeMirror> equivalenceGroup =
+                    FluentIterable.from(
+                                    elements.getTypeElement(testClass.getCanonicalName()).getEnclosedElements())
+                            .transform(Element::asType)
+                            .toList();
             tester.addEquivalenceGroup(equivalenceGroup);
         }
 
@@ -284,7 +282,7 @@ public class MoreTypesTest {
         assertThat(referencedTypes(fieldIndex, "f12")).containsExactly(setElement, stringElement);
     }
 
-    private static Set<TypeElement> referencedTypes(
+    private static ImmutableSet<TypeElement> referencedTypes(
             ImmutableMap<String, VariableElement> fieldIndex, String fieldName) {
         VariableElement field = fieldIndex.get(fieldName);
         requireNonNull(field, fieldName);
@@ -361,9 +359,12 @@ public class MoreTypesTest {
         TypeMirror interfaceType =
                 elements.getTypeElement(InterfaceType.class.getCanonicalName()).asType();
 
-        assertTrue(MoreTypes.nonObjectSuperclass(types, elements, (DeclaredType) objectType).isEmpty());
-        assertTrue(MoreTypes.nonObjectSuperclass(types, elements, (DeclaredType) interfaceType).isEmpty());
-        assertTrue(MoreTypes.nonObjectSuperclass(types, elements, (DeclaredType) parent.asType()).isEmpty());
+        assertThat(MoreTypes.nonObjectSuperclass(types, elements, (DeclaredType) objectType))
+                .isAbsent();
+        assertThat(MoreTypes.nonObjectSuperclass(types, elements, (DeclaredType) interfaceType))
+                .isAbsent();
+        assertThat(MoreTypes.nonObjectSuperclass(types, elements, (DeclaredType) parent.asType()))
+                .isAbsent();
 
         Optional<DeclaredType> parentOfChildA =
                 MoreTypes.nonObjectSuperclass(types, elements, (DeclaredType) childA.asType());
@@ -377,7 +378,7 @@ public class MoreTypesTest {
                 MoreTypes.nonObjectSuperclass(types, elements, (DeclaredType) genericChildOfInteger);
 
         EquivalenceTester<TypeMirror> tester =
-                EquivalenceTester.of(GuavaEquivalence.of(MoreTypes.equivalence()))
+                EquivalenceTester.<TypeMirror>of(MoreTypes.equivalence())
                         .addEquivalenceGroup(
                                 parentOfChildA.get(),
                                 types.getDeclaredType(parent, numberType),
@@ -426,7 +427,7 @@ public class MoreTypesTest {
                 MoreTypes.asMemberOf(types, genericParamsOfInteger, tParam);
 
         EquivalenceTester<TypeMirror> tester =
-                EquivalenceTester.of(GuavaEquivalence.of(MoreTypes.equivalence()))
+                EquivalenceTester.<TypeMirror>of(MoreTypes.equivalence())
                         .addEquivalenceGroup(
                                 fieldOfNumberParams,
                                 paramOfNumberParams,

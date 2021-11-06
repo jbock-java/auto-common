@@ -17,16 +17,28 @@ package com.google.auto.common;
 
 import com.google.common.base.Converter;
 import com.google.common.base.Optional;
+import com.google.common.base.StandardSystemProperty;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Range;
+import com.google.common.io.Files;
 import com.google.common.truth.Expect;
 import com.google.testing.compile.CompilationRule;
 import org.checkerframework.checker.nullness.qual.Nullable;
+import org.eclipse.jdt.internal.compiler.tool.EclipseCompiler;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
+import org.junit.runner.Description;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.model.Statement;
 
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.RoundEnvironment;
+import javax.annotation.processing.SupportedAnnotationTypes;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
@@ -38,8 +50,13 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.TypeVisitor;
 import javax.lang.model.util.Elements;
-import javax.lang.model.util.SimpleTypeVisitor8;
+import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
+import javax.tools.JavaCompiler;
+import javax.tools.JavaFileObject;
+import javax.tools.StandardJavaFileManager;
+import javax.tools.StandardLocation;
+import java.io.File;
 import java.util.AbstractCollection;
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -48,6 +65,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.google.common.truth.Truth.assertThat;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static javax.lang.model.util.ElementFilter.methodsIn;
 
@@ -59,12 +77,40 @@ import static javax.lang.model.util.ElementFilter.methodsIn;
  *
  * @author emcmanus@google.com (Éamonn McManus)
  */
+@RunWith(Parameterized.class)
 public class OverridesTest {
+    @Parameterized.Parameters(name = "{0}")
+    public static CompilerType[] data() {
+        return new CompilerType[]{CompilerType.JAVAC};
+    }
 
     @Rule
     public CompilationRule compilation = new CompilationRule();
     @Rule
+    public EcjCompilationRule ecjCompilation = new EcjCompilationRule();
+    @Rule
     public Expect expect = Expect.create();
+
+    public enum CompilerType {
+        JAVAC {
+            @Override
+            void initUtils(OverridesTest test) {
+                test.typeUtils = test.compilation.getTypes();
+                test.elementUtils = test.compilation.getElements();
+            }
+        },
+        ECJ {
+            @Override
+            void initUtils(OverridesTest test) {
+                test.typeUtils = test.ecjCompilation.types;
+                test.elementUtils = test.ecjCompilation.elements;
+            }
+        };
+
+        abstract void initUtils(OverridesTest test);
+    }
+
+    private final CompilerType compilerType;
 
     private Types typeUtils;
     private Elements elementUtils;
@@ -72,38 +118,34 @@ public class OverridesTest {
     private Overrides javacOverrides;
     private Overrides.ExplicitOverrides explicitOverrides;
 
+    public OverridesTest(CompilerType compilerType) {
+        this.compilerType = compilerType;
+    }
+
     @Before
     public void initializeTestElements() {
         javacElementUtils = compilation.getElements();
         javacOverrides = new Overrides.NativeOverrides(javacElementUtils);
-        typeUtils = compilation.getTypes();
-        elementUtils = compilation.getElements();
+        compilerType.initUtils(this);
         explicitOverrides = new Overrides.ExplicitOverrides(typeUtils);
     }
 
     static class TypesForInheritance {
         interface One {
-            @SuppressWarnings("unused")
             void m();
 
-            @SuppressWarnings("unused")
             void m(String x);
 
-            @SuppressWarnings("unused")
             void n();
 
-            @SuppressWarnings("unused")
             Number number();
         }
 
         interface Two {
-            @SuppressWarnings("unused")
             void m();
 
-            @SuppressWarnings("unused")
             void m(int x);
 
-            @SuppressWarnings("unused")
             Integer number();
         }
 
@@ -112,11 +154,9 @@ public class OverridesTest {
             }
         }
 
-        @SuppressWarnings("unused")
         static class ChildOfParent extends Parent {
         }
 
-        @SuppressWarnings("unused")
         static class ChildOfOne implements One {
             @Override
             public void m() {
@@ -136,7 +176,6 @@ public class OverridesTest {
             }
         }
 
-        @SuppressWarnings("unused")
         static class ChildOfOneAndTwo implements One, Two {
             @Override
             public void m() {
@@ -160,7 +199,6 @@ public class OverridesTest {
             }
         }
 
-        @SuppressWarnings("unused")
         static class ChildOfParentAndOne extends Parent implements One {
             @Override
             public void m() {
@@ -180,7 +218,6 @@ public class OverridesTest {
             }
         }
 
-        @SuppressWarnings("unused")
         static class ChildOfParentAndOneAndTwo extends Parent implements One, Two {
             @Override
             public void m(String x) {
@@ -200,19 +237,15 @@ public class OverridesTest {
             }
         }
 
-        @SuppressWarnings("unused")
         abstract static class AbstractChildOfOne implements One {
         }
 
-        @SuppressWarnings("unused")
         abstract static class AbstractChildOfOneAndTwo implements One, Two {
         }
 
-        @SuppressWarnings("unused")
         abstract static class AbstractChildOfParentAndOneAndTwo extends Parent implements One, Two {
         }
 
-        @SuppressWarnings("unused")
         interface ExtendingOneAndTwo extends One, Two {
         }
     }
@@ -228,29 +261,23 @@ public class OverridesTest {
         }
 
         interface HasKey {
-            @SuppressWarnings("unused")
             Key key();
         }
 
         interface HasBindingType {
-            @SuppressWarnings("unused")
             BindingType bindingType();
         }
 
         interface HasContributionType {
-            @SuppressWarnings("unused")
             ContributionType contributionType();
         }
 
         abstract static class BindingDeclaration implements HasKey {
-            @SuppressWarnings("unused")
             abstract Optional<Element> bindingElement();
 
-            @SuppressWarnings("unused")
             abstract Optional<TypeElement> contributingModule();
         }
 
-        @SuppressWarnings("unused")
         abstract static class MultibindingDeclaration extends BindingDeclaration
                 implements HasBindingType, HasContributionType {
             @Override
@@ -266,7 +293,6 @@ public class OverridesTest {
 
     static class TypesForVisibility {
         public abstract static class PublicGrandparent {
-            @SuppressWarnings("unused")
             public abstract String foo();
         }
 
@@ -277,14 +303,12 @@ public class OverridesTest {
             }
         }
 
-        @SuppressWarnings("unused")
         static class Child extends PrivateParent {
         }
     }
 
     static class TypesForGenerics {
         interface GCollection<E> {
-            @SuppressWarnings("unused")
             boolean add(E x);
         }
 
@@ -293,7 +317,6 @@ public class OverridesTest {
             boolean add(E x);
         }
 
-        @SuppressWarnings("unused")
         static class StringList implements GList<String> {
             @Override
             public boolean add(String x) {
@@ -301,7 +324,7 @@ public class OverridesTest {
             }
         }
 
-        @SuppressWarnings(value = {"rawtypes", "unused"})
+        @SuppressWarnings("rawtypes")
         static class RawList implements GList {
             @Override
             public boolean add(Object x) {
@@ -313,12 +336,10 @@ public class OverridesTest {
     @SuppressWarnings("rawtypes")
     static class TypesForRaw {
         static class RawParent {
-            @SuppressWarnings("unused")
             void frob(List x) {
             }
         }
 
-        @SuppressWarnings("unused")
         static class RawChildOfRaw extends RawParent {
             @Override
             void frob(List x) {
@@ -326,12 +347,10 @@ public class OverridesTest {
         }
 
         static class NonRawParent {
-            @SuppressWarnings("unused")
             void frob(List<String> x) {
             }
         }
 
-        @SuppressWarnings("unused")
         static class RawChildOfNonRaw extends NonRawParent {
             @Override
             void frob(List x) {
@@ -376,7 +395,7 @@ public class OverridesTest {
     @Test
     public void overridesDiamond() {
         checkOverridesInSet(
-                Set.of(
+                ImmutableSet.<Class<?>>of(
                         Collection.class, List.class, AbstractCollection.class, AbstractList.class));
     }
 
@@ -384,7 +403,7 @@ public class OverridesTest {
         checkOverridesInSet(ImmutableSet.copyOf(container.getDeclaredClasses()));
     }
 
-    private void checkOverridesInSet(Set<Class<?>> testClasses) {
+    private void checkOverridesInSet(ImmutableSet<Class<?>> testClasses) {
         assertThat(testClasses).isNotEmpty();
         ImmutableSet.Builder<TypeElement> testTypesBuilder = ImmutableSet.builder();
         for (Class<?> testClass : testClasses) {
@@ -451,7 +470,6 @@ public class OverridesTest {
     // it also inherits it from Collection<E>.
 
     private interface XCollection<E> {
-        @SuppressWarnings("unused")
         boolean add(E e);
     }
 
@@ -546,7 +564,7 @@ public class OverridesTest {
         List<TypeMirror> params =
                 explicitOverrides.erasedParameterTypes(valueConverter, stringToRangeConverter);
         List<TypeMirror> expectedParams =
-                List.of(typeUtils.erasure(range.asType()));
+                ImmutableList.<TypeMirror>of(typeUtils.erasure(range.asType()));
         assertTypeListsEqual(params, expectedParams);
     }
 
@@ -598,6 +616,106 @@ public class OverridesTest {
         }
     }
 
+    // TODO(emcmanus): replace this with something from compile-testing when that's available.
+
+    /**
+     * An equivalent to {@link CompilationRule} that uses ecj (the Eclipse compiler) instead of javac.
+     * If the parameterized test is not selecting ecj then this rule has no effect.
+     */
+    public class EcjCompilationRule implements TestRule {
+        Elements elements;
+        Types types;
+
+        @Override
+        public Statement apply(Statement base, Description description) {
+            if (!compilerType.equals(CompilerType.ECJ)) {
+                return base;
+            }
+            return new EcjCompilationStatement(base);
+        }
+    }
+
+    private class EcjCompilationStatement extends Statement {
+        private final Statement statement;
+
+        EcjCompilationStatement(Statement base) {
+            this.statement = base;
+        }
+
+        @Override
+        public void evaluate() throws Throwable {
+            File tmpDir = File.createTempFile("OverridesTest", "dir");
+            tmpDir.delete();
+            tmpDir.mkdir();
+            File dummySourceFile = new File(tmpDir, "Dummy.java");
+            try {
+                Files.asCharSink(dummySourceFile, UTF_8).write("class Dummy {}");
+                evaluate(dummySourceFile);
+            } finally {
+                dummySourceFile.delete();
+                tmpDir.delete();
+            }
+        }
+
+        private void evaluate(File dummySourceFile) throws Throwable {
+            JavaCompiler compiler = new EclipseCompiler();
+            StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, UTF_8);
+            // This hack is only needed in a Google-internal Java 8 environment where symbolic links make
+            // it hard for ecj to find the boot class path. Elsewhere it is unnecessary but harmless.
+            File rtJar = new File(StandardSystemProperty.JAVA_HOME.value() + "/lib/rt.jar");
+            if (rtJar.exists()) {
+                List<File> bootClassPath =
+                        ImmutableList.<File>builder()
+                                .add(rtJar)
+                                .addAll(fileManager.getLocation(StandardLocation.PLATFORM_CLASS_PATH))
+                                .build();
+                fileManager.setLocation(StandardLocation.PLATFORM_CLASS_PATH, bootClassPath);
+            }
+            Iterable<? extends JavaFileObject> sources = fileManager.getJavaFileObjects(dummySourceFile);
+            JavaCompiler.CompilationTask task =
+                    compiler.getTask(null, fileManager, null, null, null, sources);
+            EcjTestProcessor processor = new EcjTestProcessor(statement);
+            task.setProcessors(ImmutableList.of(processor));
+            assertThat(task.call()).isTrue();
+            processor.maybeThrow();
+        }
+    }
+
+    @SupportedAnnotationTypes("*")
+    private class EcjTestProcessor extends AbstractProcessor {
+        private final Statement statement;
+        private Throwable thrown;
+
+        EcjTestProcessor(Statement statement) {
+            this.statement = statement;
+        }
+
+        @Override
+        public SourceVersion getSupportedSourceVersion() {
+            return SourceVersion.latest();
+        }
+
+        @Override
+        public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+            if (roundEnv.processingOver()) {
+                ecjCompilation.elements = processingEnv.getElementUtils();
+                ecjCompilation.types = processingEnv.getTypeUtils();
+                try {
+                    statement.evaluate();
+                } catch (Throwable t) {
+                    thrown = t;
+                }
+            }
+            return false;
+        }
+
+        void maybeThrow() throws Throwable {
+            if (thrown != null) {
+                throw thrown;
+            }
+        }
+    }
+
     private TypeElement javacType(TypeElement type) {
         return javacElementUtils.getTypeElement(type.getQualifiedName().toString());
     }
@@ -608,7 +726,7 @@ public class OverridesTest {
         }
         TypeElement containingType = MoreElements.asType(method.getEnclosingElement());
         TypeElement javacContainingType = javacType(containingType);
-        List<ExecutableElement> candidates = new ArrayList<>();
+        List<ExecutableElement> candidates = new ArrayList<ExecutableElement>();
         methods:
         for (ExecutableElement javacMethod : methodsIn(javacContainingType.getEnclosedElements())) {
             if (javacMethod.getSimpleName().contentEquals(method.getSimpleName())
@@ -636,7 +754,7 @@ public class OverridesTest {
     }
 
     private static final TypeVisitor<String, Void> ERASED_STRING_TYPE_VISITOR =
-            new SimpleTypeVisitor8<>() {
+            new SimpleTypeVisitor6<String, Void>() {
                 @Override
                 protected String defaultAction(TypeMirror e, Void p) {
                     return e.toString();

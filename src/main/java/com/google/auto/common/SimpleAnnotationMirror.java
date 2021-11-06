@@ -16,6 +16,9 @@
 
 package com.google.auto.common;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableMap;
+
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.ElementKind;
@@ -26,9 +29,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.StringJoiner;
-import java.util.stream.Collectors;
 
+import static com.google.auto.common.MoreStreams.toImmutableMap;
+import static com.google.common.base.Preconditions.checkArgument;
 import static javax.lang.model.util.ElementFilter.methodsIn;
 
 /**
@@ -41,13 +44,12 @@ import static javax.lang.model.util.ElementFilter.methodsIn;
  */
 public final class SimpleAnnotationMirror implements AnnotationMirror {
     private final TypeElement annotationType;
-    private final Map<String, ? extends AnnotationValue> namedValues;
-    private final Map<ExecutableElement, ? extends AnnotationValue> elementValues;
+    private final ImmutableMap<String, ? extends AnnotationValue> namedValues;
+    private final ImmutableMap<ExecutableElement, ? extends AnnotationValue> elementValues;
 
     private SimpleAnnotationMirror(
-            TypeElement annotationType,
-            Map<String, ? extends AnnotationValue> namedValues) {
-        Preconditions.checkArgument(
+            TypeElement annotationType, Map<String, ? extends AnnotationValue> namedValues) {
+        checkArgument(
                 annotationType.getKind().equals(ElementKind.ANNOTATION_TYPE),
                 "annotationType must be an annotation: %s",
                 annotationType);
@@ -65,19 +67,19 @@ public final class SimpleAnnotationMirror implements AnnotationMirror {
             }
         }
 
-        Preconditions.checkArgument(
+        checkArgument(
                 unusedValues.isEmpty(),
                 "namedValues has entries for members that are not in %s: %s",
                 annotationType,
                 unusedValues);
-        Preconditions.checkArgument(
+        checkArgument(
                 missingMembers.isEmpty(), "namedValues is missing entries for: %s", missingMembers);
 
         this.annotationType = annotationType;
-        this.namedValues = namedValues;
+        this.namedValues = ImmutableMap.copyOf(namedValues);
         this.elementValues =
                 methodsIn(annotationType.getEnclosedElements()).stream()
-                        .collect(Collectors.toUnmodifiableMap(e -> e, e -> values.get(e.getSimpleName().toString())));
+                        .collect(toImmutableMap(e -> e, e -> values.get(e.getSimpleName().toString())));
     }
 
     /**
@@ -85,7 +87,7 @@ public final class SimpleAnnotationMirror implements AnnotationMirror {
      * {@code annotationType} has any annotation members, they must have default values.
      */
     public static AnnotationMirror of(TypeElement annotationType) {
-        return of(annotationType, Map.of());
+        return of(annotationType, ImmutableMap.of());
     }
 
     /**
@@ -112,9 +114,10 @@ public final class SimpleAnnotationMirror implements AnnotationMirror {
     public String toString() {
         StringBuilder builder = new StringBuilder("@").append(annotationType.getQualifiedName());
         if (!namedValues.isEmpty()) {
-            StringJoiner joiner = new StringJoiner(", ");
-            namedValues.forEach((k, v) -> joiner.add(k + " = " + v));
-            builder.append('(').append(joiner).append(')');
+            builder
+                    .append('(')
+                    .append(Joiner.on(", ").withKeyValueSeparator(" = ").join(namedValues))
+                    .append(')');
         }
         return builder.toString();
     }
@@ -122,7 +125,7 @@ public final class SimpleAnnotationMirror implements AnnotationMirror {
     @Override
     public boolean equals(Object other) {
         return other instanceof AnnotationMirror
-                && AnnotationMirrors.equivalence().test(this, (AnnotationMirror) other);
+                && AnnotationMirrors.equivalence().equivalent(this, (AnnotationMirror) other);
     }
 
     @Override

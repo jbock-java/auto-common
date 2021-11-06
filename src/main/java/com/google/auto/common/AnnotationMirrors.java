@@ -15,6 +15,10 @@
  */
 package com.google.auto.common;
 
+import com.google.common.base.Equivalence;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
@@ -25,13 +29,12 @@ import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 import static com.google.auto.common.MoreElements.isAnnotationPresent;
-import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toUnmodifiableSet;
+import static com.google.auto.common.MoreStreams.toImmutableSet;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static java.util.Collections.unmodifiableMap;
 
 /**
  * A utility class for working with {@link AnnotationMirror} instances.
@@ -40,14 +43,14 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
  */
 public final class AnnotationMirrors {
     private static final Equivalence<AnnotationMirror> ANNOTATION_MIRROR_EQUIVALENCE =
-            new Equivalence<>() {
+            new Equivalence<AnnotationMirror>() {
                 @Override
                 protected boolean doEquivalent(AnnotationMirror left, AnnotationMirror right) {
                     return MoreTypes.equivalence()
-                            .test(left.getAnnotationType(), right.getAnnotationType())
+                            .equivalent(left.getAnnotationType(), right.getAnnotationType())
                             && AnnotationValues.equivalence()
                             .pairwise()
-                            .test(
+                            .equivalent(
                                     getAnnotationValuesWithDefaults(left).values(),
                                     getAnnotationValuesWithDefaults(right).values());
                 }
@@ -90,11 +93,13 @@ public final class AnnotationMirrors {
      * ExecutableElement}s are defined in {@code annotation}'s {@linkplain
      * AnnotationMirror#getAnnotationType() type}.
      */
-    public static Map<ExecutableElement, AnnotationValue> getAnnotationValuesWithDefaults(
+    public static ImmutableMap<ExecutableElement, AnnotationValue> getAnnotationValuesWithDefaults(
             AnnotationMirror annotation) {
-        Map<ExecutableElement, AnnotationValue> values = new HashMap<>();
-        Map<? extends ExecutableElement, ? extends AnnotationValue> declaredValues =
-                annotation.getElementValues();
+        ImmutableMap.Builder<ExecutableElement, AnnotationValue> values = ImmutableMap.builder();
+        // Use unmodifiableMap to eliminate wildcards, which cause issues for our nullness checker.
+        @SuppressWarnings("GetElementValues")
+        Map<ExecutableElement, AnnotationValue> declaredValues =
+                unmodifiableMap(annotation.getElementValues());
         for (ExecutableElement method :
                 ElementFilter.methodsIn(annotation.getAnnotationType().asElement().getEnclosedElements())) {
             // Must iterate and put in this order, to ensure consistency in generated code.
@@ -111,7 +116,7 @@ public final class AnnotationMirrors {
                                 + "()");
             }
         }
-        return values;
+        return values.build();
     }
 
     /**
@@ -135,8 +140,8 @@ public final class AnnotationMirrors {
      */
     public static Map.Entry<ExecutableElement, AnnotationValue> getAnnotationElementAndValue(
             AnnotationMirror annotationMirror, final String elementName) {
-        requireNonNull(annotationMirror);
-        requireNonNull(elementName);
+        checkNotNull(annotationMirror);
+        checkNotNull(elementName);
         for (Map.Entry<ExecutableElement, AnnotationValue> entry :
                 getAnnotationValuesWithDefaults(annotationMirror).entrySet()) {
             if (entry.getKey().getSimpleName().contentEquals(elementName)) {
@@ -155,11 +160,11 @@ public final class AnnotationMirrors {
      * Returns all {@linkplain AnnotationMirror annotations} that are present on the given {@link
      * Element} which are themselves annotated with {@code annotationClass}.
      */
-    public static Set<? extends AnnotationMirror> getAnnotatedAnnotations(
+    public static ImmutableSet<? extends AnnotationMirror> getAnnotatedAnnotations(
             Element element, Class<? extends Annotation> annotationClass) {
         String name = annotationClass.getCanonicalName();
         if (name == null) {
-            return Set.of();
+            return ImmutableSet.of();
         }
         return getAnnotatedAnnotations(element, name);
     }
@@ -168,11 +173,11 @@ public final class AnnotationMirrors {
      * Returns all {@linkplain AnnotationMirror annotations} that are present on the given {@link
      * Element} which are themselves annotated with {@code annotation}.
      */
-    public static Set<? extends AnnotationMirror> getAnnotatedAnnotations(
+    public static ImmutableSet<? extends AnnotationMirror> getAnnotatedAnnotations(
             Element element, TypeElement annotation) {
         return element.getAnnotationMirrors().stream()
                 .filter(input -> isAnnotationPresent(input.getAnnotationType().asElement(), annotation))
-                .collect(toUnmodifiableSet());
+                .collect(toImmutableSet());
     }
 
     /**
@@ -180,11 +185,11 @@ public final class AnnotationMirrors {
      * Element} which are themselves annotated with an annotation whose type's canonical name is
      * {@code annotationName}.
      */
-    public static Set<? extends AnnotationMirror> getAnnotatedAnnotations(
+    public static ImmutableSet<? extends AnnotationMirror> getAnnotatedAnnotations(
             Element element, String annotationName) {
         return element.getAnnotationMirrors().stream()
                 .filter(input -> isAnnotationPresent(input.getAnnotationType().asElement(), annotationName))
-                .collect(toUnmodifiableSet());
+                .collect(toImmutableSet());
     }
 
     /**

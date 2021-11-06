@@ -15,6 +15,11 @@
  */
 package com.google.auto.common;
 
+import com.google.common.base.Equivalence;
+import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -40,10 +45,10 @@ import javax.lang.model.util.Types;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
-import static java.util.Objects.requireNonNull;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkState;
 import static javax.lang.model.type.TypeKind.ARRAY;
 import static javax.lang.model.type.TypeKind.DECLARED;
 import static javax.lang.model.type.TypeKind.EXECUTABLE;
@@ -63,12 +68,12 @@ public final class MoreTypes {
 
         @Override
         protected boolean doEquivalent(TypeMirror a, TypeMirror b) {
-            return MoreTypes.equal(a, b, Set.of());
+            return MoreTypes.equal(a, b, ImmutableSet.<ComparedElements>of());
         }
 
         @Override
         protected int doHash(TypeMirror t) {
-            return MoreTypes.hash(t, Set.of());
+            return MoreTypes.hash(t, ImmutableSet.<Element>of());
         }
 
         @Override
@@ -85,7 +90,7 @@ public final class MoreTypes {
      * <ul>
      * <li>If you don't have an instance of {@code Types}.
      * <li>If you want a reliable {@code hashCode()} for the types, for example to construct a set
-     *     of types using {@link java.util.HashSet} with {@code Equivalence#wrap(Object)}.
+     *     of types using {@link java.util.HashSet} with {@link Equivalence#wrap(Object)}.
      * <li>If you want distinct type variables to be considered equal if they have the same names
      *     and bounds.
      * <li>If you want wildcard types to compare equal if they have the same bounds. {@code
@@ -119,15 +124,15 @@ public final class MoreTypes {
 
     private static class ComparedElements {
         final Element a;
-        final List<TypeMirror> aArguments;
+        final ImmutableList<TypeMirror> aArguments;
         final Element b;
-        final List<TypeMirror> bArguments;
+        final ImmutableList<TypeMirror> bArguments;
 
         ComparedElements(
                 Element a,
-                List<TypeMirror> aArguments,
+                ImmutableList<TypeMirror> aArguments,
                 Element b,
-                List<TypeMirror> bArguments) {
+                ImmutableList<TypeMirror> bArguments) {
             this.a = a;
             this.aArguments = aArguments;
             this.b = b;
@@ -271,7 +276,7 @@ public final class MoreTypes {
 
         private Set<ComparedElements> visitingSetPlus(
                 Set<ComparedElements> visiting, Element a, Element b) {
-            List<TypeMirror> noArguments = List.of();
+            ImmutableList<TypeMirror> noArguments = ImmutableList.of();
             return visitingSetPlus(visiting, a, noArguments, b, noArguments);
         }
 
@@ -281,17 +286,17 @@ public final class MoreTypes {
                 List<? extends TypeMirror> aArguments,
                 Element b,
                 List<? extends TypeMirror> bArguments) {
-            @SuppressWarnings("unchecked")
             ComparedElements comparedElements =
                     new ComparedElements(
-                            a, (List<TypeMirror>) aArguments,
-                            b, (List<TypeMirror>) bArguments);
-            Set<ComparedElements> newVisiting = new HashSet<>(visiting);
+                            a, ImmutableList.<TypeMirror>copyOf(aArguments),
+                            b, ImmutableList.<TypeMirror>copyOf(bArguments));
+            Set<ComparedElements> newVisiting = new HashSet<ComparedElements>(visiting);
             newVisiting.add(comparedElements);
             return newVisiting;
         }
     }
 
+    @SuppressWarnings("TypeEquals")
     private static boolean equal(
             TypeMirror a, TypeMirror b, Set<ComparedElements> visiting) {
         if (a == b) {
@@ -307,6 +312,7 @@ public final class MoreTypes {
         // The javac implementation of ExecutableType, at least in some versions, does not take thrown
         // exceptions into account in its equals implementation, so avoid this optimization for
         // ExecutableType.
+        @SuppressWarnings("TypesEquals")
         boolean equal = a.equals(b);
         if (equal && !(a instanceof ExecutableType)) {
             return true;
@@ -456,25 +462,25 @@ public final class MoreTypes {
      * Returns the set of {@linkplain TypeElement types} that are referenced by the given {@link
      * TypeMirror}.
      */
-    public static Set<TypeElement> referencedTypes(TypeMirror type) {
-        requireNonNull(type);
-        Set<TypeElement> elements = new HashSet<>();
+    public static ImmutableSet<TypeElement> referencedTypes(TypeMirror type) {
+        checkNotNull(type);
+        ImmutableSet.Builder<TypeElement> elements = ImmutableSet.builder();
         type.accept(ReferencedTypes.INSTANCE, elements);
-        return elements;
+        return elements.build();
     }
 
     private static final class ReferencedTypes
-            extends SimpleTypeVisitor8<Void, Set<TypeElement>> {
+            extends SimpleTypeVisitor8<Void, ImmutableSet.Builder<TypeElement>> {
         private static final ReferencedTypes INSTANCE = new ReferencedTypes();
 
         @Override
-        public Void visitArray(ArrayType t, Set<TypeElement> p) {
+        public Void visitArray(ArrayType t, ImmutableSet.Builder<TypeElement> p) {
             t.getComponentType().accept(this, p);
             return null;
         }
 
         @Override
-        public Void visitDeclared(DeclaredType t, Set<TypeElement> p) {
+        public Void visitDeclared(DeclaredType t, ImmutableSet.Builder<TypeElement> p) {
             p.add(MoreElements.asType(t.asElement()));
             for (TypeMirror typeArgument : t.getTypeArguments()) {
                 typeArgument.accept(this, p);
@@ -483,14 +489,14 @@ public final class MoreTypes {
         }
 
         @Override
-        public Void visitTypeVariable(TypeVariable t, Set<TypeElement> p) {
+        public Void visitTypeVariable(TypeVariable t, ImmutableSet.Builder<TypeElement> p) {
             t.getLowerBound().accept(this, p);
             t.getUpperBound().accept(this, p);
             return null;
         }
 
         @Override
-        public Void visitWildcard(WildcardType t, Set<TypeElement> p) {
+        public Void visitWildcard(WildcardType t, ImmutableSet.Builder<TypeElement> p) {
             TypeMirror extendsBound = t.getExtendsBound();
             if (extendsBound != null) {
                 extendsBound.accept(this, p);
@@ -547,13 +553,13 @@ public final class MoreTypes {
         return MoreElements.asType(asElement(mirror));
     }
 
-    public static Set<TypeElement> asTypeElements(Iterable<? extends TypeMirror> mirrors) {
-        requireNonNull(mirrors);
-        Set<TypeElement> builder = new HashSet<>();
+    public static ImmutableSet<TypeElement> asTypeElements(Iterable<? extends TypeMirror> mirrors) {
+        checkNotNull(mirrors);
+        ImmutableSet.Builder<TypeElement> builder = ImmutableSet.builder();
         for (TypeMirror mirror : mirrors) {
             builder.add(asTypeElement(mirror));
         }
-        return builder;
+        return builder.build();
     }
 
     /**
@@ -814,7 +820,7 @@ public final class MoreTypes {
      * TypeMirror} does not represent a type that can be referenced by a {@link Class}
      */
     public static boolean isTypeOf(final Class<?> clazz, TypeMirror type) {
-        requireNonNull(clazz);
+        checkNotNull(clazz);
         return type.accept(new IsTypeOf(clazz), null);
     }
 
@@ -881,24 +887,24 @@ public final class MoreTypes {
 
     /**
      * Returns the superclass of {@code type}, with any type parameters bound by {@code type}, or
-     * {@link Optional#empty()} if {@code type} is an interface or {@link Object} or its superclass
+     * {@link Optional#absent()} if {@code type} is an interface or {@link Object} or its superclass
      * is {@link Object}.
      */
     // TODO(bcorso): Remove unused parameter Elements?
     public static Optional<DeclaredType> nonObjectSuperclass(
             Types types, Elements elements, DeclaredType type) {
-        requireNonNull(types);
-        requireNonNull(elements); // This is no longer used, but here to avoid changing the API.
-        requireNonNull(type);
+        checkNotNull(types);
+        checkNotNull(elements); // This is no longer used, but here to avoid changing the API.
+        checkNotNull(type);
 
         TypeMirror superclassType = asTypeElement(type).getSuperclass();
         if (!isType(superclassType)) { // type is Object or an interface
-            return Optional.empty();
+            return Optional.absent();
         }
 
         DeclaredType superclass = asDeclared(superclassType);
         if (isObjectType(superclass)) {
-            return Optional.empty();
+            return Optional.absent();
         }
 
         if (superclass.getTypeArguments().isEmpty()) {
@@ -932,7 +938,7 @@ public final class MoreTypes {
                     MoreTypes.asExecutable(types.asMemberOf(container, methodOrConstructor));
             List<? extends VariableElement> parameters = methodOrConstructor.getParameters();
             List<? extends TypeMirror> parameterTypes = resolvedMethodOrConstructor.getParameterTypes();
-            Preconditions.checkState(parameters.size() == parameterTypes.size());
+            checkState(parameters.size() == parameterTypes.size());
             for (int i = 0; i < parameters.size(); i++) {
                 // We need to capture the parameter type of the variable we're concerned about,
                 // for later printing.  This is the only way to do it since we can't use
@@ -971,7 +977,7 @@ public final class MoreTypes {
     }
 
     /**
-     * Visitor that tells whether a type is erased, in the sense of {@code #castIsUnchecked}. Each
+     * Visitor that tells whether a type is erased, in the sense of {@link #castIsUnchecked}. Each
      * visitX method returns true if its input parameter is true or if the type being visited is
      * erased.
      */

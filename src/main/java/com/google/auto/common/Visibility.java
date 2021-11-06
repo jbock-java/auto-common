@@ -15,12 +15,15 @@
  */
 package com.google.auto.common;
 
+import com.google.common.base.Enums;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import java.util.Set;
 
-import static java.util.Objects.requireNonNull;
+import static com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.collect.Comparators.min;
 import static javax.lang.model.element.ElementKind.PACKAGE;
 
 /**
@@ -37,15 +40,20 @@ public enum Visibility {
     PROTECTED,
     PUBLIC;
 
+    // TODO(ronshapiro): remove this and reference ElementKind.MODULE directly once we start building
+    // with -source 9
+    private static final ElementKind MODULE =
+            Enums.getIfPresent(ElementKind.class, "MODULE").orNull();
+
     /**
      * Returns the visibility of the given {@link Element}. While package and module elements don't
      * technically have a visibility associated with them, this method returns {@link #PUBLIC} for
      * them.
      */
     public static Visibility ofElement(Element element) {
-        requireNonNull(element);
+        checkNotNull(element);
         // packages and module don't have modifiers, but they're obviously "public"
-        if (element.getKind().equals(PACKAGE) || element.getKind().equals(ElementKind.MODULE)) {
+        if (element.getKind().equals(PACKAGE) || element.getKind().equals(MODULE)) {
             return PUBLIC;
         }
         Set<Modifier> modifiers = element.getModifiers();
@@ -65,7 +73,7 @@ public enum Visibility {
      * visibility of its enclosing elements.
      */
     public static Visibility effectiveVisibilityOfElement(Element element) {
-        requireNonNull(element);
+        checkNotNull(element);
         Visibility effectiveVisibility = PUBLIC;
         Element currentElement = element;
         while (currentElement != null) {
@@ -73,22 +81,5 @@ public enum Visibility {
             currentElement = currentElement.getEnclosingElement();
         }
         return effectiveVisibility;
-    }
-
-    /**
-     * Returns the minimum of the two values. If the values compare as 0, the first is returned.
-     *
-     * <p>The recommended solution for finding the {@code minimum} of some values depends on the type
-     * of your data and the number of elements you have. Read more in the Guava User Guide article on
-     * <a href="https://github.com/google/guava/wiki/CollectionUtilitiesExplained#comparators">{@code
-     * Comparators}</a>.
-     *
-     * @param a first value to compare, returned if less than or equal to b.
-     * @param b second value to compare.
-     * @throws ClassCastException if the parameters are not <i>mutually comparable</i>.
-     * @since 30.0
-     */
-    private static <T extends Comparable<? super T>> T min(T a, T b) {
-        return (a.compareTo(b) <= 0) ? a : b;
     }
 }

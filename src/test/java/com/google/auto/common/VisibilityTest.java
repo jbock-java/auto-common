@@ -22,6 +22,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
 import javax.lang.model.element.Element;
+import javax.lang.model.util.Elements;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 import static com.google.auto.common.Visibility.DEFAULT;
 import static com.google.auto.common.Visibility.PRIVATE;
@@ -45,9 +48,16 @@ public class VisibilityTest {
     }
 
     @Test
-    public void moduleVisibility() {
+    public void moduleVisibility() throws IllegalAccessException, InvocationTargetException {
+        Method getModuleElement;
+        try {
+            getModuleElement = Elements.class.getMethod("getModuleElement", CharSequence.class);
+        } catch (NoSuchMethodException e) {
+            // TODO(ronshapiro): rewrite this test without reflection once we're on Java 9
+            return;
+        }
         Element moduleElement =
-                compilation.getElements().getModuleElement("java.base");
+                (Element) getModuleElement.invoke(compilation.getElements(), "java.base");
         assertThat(Visibility.ofElement(moduleElement)).isEqualTo(PUBLIC);
     }
 
