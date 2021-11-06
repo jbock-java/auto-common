@@ -26,7 +26,6 @@ javadoc {
 
 repositories {
     mavenCentral()
-    maven { url 'https://s01.oss.sonatype.org/content/repositories/iogithubjbock-java-1100' }
 }
 
 tasks.withType(AbstractArchiveTask) {
@@ -40,7 +39,7 @@ tasks.withType(GenerateModuleMetadata) {
 
 dependencies {
     api('io.github.jbock-java:javapoet:1.14')
-    implementation('io.github.jbock-java:guava:31.0.1.0')
+    api('io.github.jbock-java:guava:31.0.1.0')
     testImplementation('org.junit.jupiter:junit-jupiter:5.8.1')
     testImplementation('org.junit.vintage:junit-vintage-engine:5.8.1')
     testImplementation('com.google.testing.compile:compile-testing:0.19')
