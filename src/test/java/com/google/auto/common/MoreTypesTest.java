@@ -50,6 +50,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static com.google.auto.common.AnnotationMirrorsTest.equivalenceTesterOf;
 import static com.google.common.truth.Truth.assertThat;
 import static java.util.Objects.requireNonNull;
 import static javax.lang.model.type.TypeKind.NONE;
@@ -96,7 +97,7 @@ public class MoreTypesTest {
         TypeMirror containedInObject = types.asMemberOf(containerOfObject, contained);
         TypeMirror containedInString = types.asMemberOf(containerOfString, contained);
         EquivalenceTester<TypeMirror> tester =
-                EquivalenceTester.<TypeMirror>of(MoreTypes.equivalence())
+                equivalenceTesterOf(MoreTypes.equivalence())
                         .addEquivalenceGroup(types.getNullType())
                         .addEquivalenceGroup(types.getNoType(NONE))
                         .addEquivalenceGroup(types.getNoType(VOID))
@@ -378,7 +379,7 @@ public class MoreTypesTest {
                 MoreTypes.nonObjectSuperclass(types, elements, (DeclaredType) genericChildOfInteger);
 
         EquivalenceTester<TypeMirror> tester =
-                EquivalenceTester.<TypeMirror>of(MoreTypes.equivalence())
+                equivalenceTesterOf(MoreTypes.equivalence())
                         .addEquivalenceGroup(
                                 parentOfChildA.get(),
                                 types.getDeclaredType(parent, numberType),
@@ -427,7 +428,7 @@ public class MoreTypesTest {
                 MoreTypes.asMemberOf(types, genericParamsOfInteger, tParam);
 
         EquivalenceTester<TypeMirror> tester =
-                EquivalenceTester.<TypeMirror>of(MoreTypes.equivalence())
+                equivalenceTesterOf(MoreTypes.equivalence())
                         .addEquivalenceGroup(
                                 fieldOfNumberParams,
                                 paramOfNumberParams,

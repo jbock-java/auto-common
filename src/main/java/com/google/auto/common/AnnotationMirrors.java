@@ -15,7 +15,6 @@
  */
 package com.google.auto.common;
 
-import com.google.common.base.Equivalence;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 

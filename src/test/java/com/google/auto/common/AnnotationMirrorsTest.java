@@ -164,7 +164,7 @@ public class AnnotationMirrorsTest {
     @Test
     public void testEquivalences() {
         EquivalenceTester<AnnotationMirror> tester =
-                EquivalenceTester.of(AnnotationMirrors.equivalence());
+                equivalenceTesterOf(AnnotationMirrors.equivalence());
 
         tester.addEquivalenceGroup(
                 annotationOn(SimplyAnnotated.class), annotationOn(AlsoSimplyAnnotated.class));
@@ -401,5 +401,19 @@ public class AnnotationMirrorsTest {
                 .containsExactly(
                         elements.getTypeElement(AnnotatedAnnotation1.class.getCanonicalName()),
                         elements.getTypeElement(AnnotatedAnnotation2.class.getCanonicalName()));
+    }
+
+    static <T> EquivalenceTester<T> equivalenceTesterOf(Equivalence<T> equivalence) {
+        return EquivalenceTester.of(new com.google.common.base.Equivalence<>() {
+            @Override
+            protected boolean doEquivalent(T a, T b) {
+                return equivalence.doEquivalent(a, b);
+            }
+
+            @Override
+            protected int doHash(T o) {
+                return equivalence.doHash(o);
+            }
+        });
     }
 }

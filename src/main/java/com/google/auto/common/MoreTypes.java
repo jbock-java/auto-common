@@ -15,7 +15,6 @@
  */
 package com.google.auto.common;
 
-import com.google.common.base.Equivalence;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -977,7 +976,7 @@ public final class MoreTypes {
     }
 
     /**
-     * Visitor that tells whether a type is erased, in the sense of {@link #castIsUnchecked}. Each
+     * Visitor that tells whether a type is erased, in the sense of {@code #castIsUnchecked}. Each
      * visitX method returns true if its input parameter is true or if the type being visited is
      * erased.
      */

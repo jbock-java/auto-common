@@ -15,7 +15,6 @@
  */
 package com.google.auto.common;
 
-import com.google.common.base.Equivalence;
 import com.google.common.collect.ImmutableList;
 
 import javax.lang.model.element.AnnotationMirror;
