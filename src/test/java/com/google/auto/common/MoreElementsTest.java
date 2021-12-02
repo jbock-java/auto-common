@@ -15,14 +15,13 @@
  */
 package com.google.auto.common;
 
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.truth.Expect;
 import com.google.testing.compile.CompilationRule;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
@@ -43,8 +42,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.util.AbstractList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 
 import static com.google.common.collect.Iterables.getOnlyElement;
@@ -270,9 +271,9 @@ public class MoreElementsTest {
             Optional<AnnotationMirror> documented,
             Optional<AnnotationMirror> innerAnnotation,
             Optional<AnnotationMirror> suppressWarnings) {
-        expect.that(documented).isPresent();
-        expect.that(innerAnnotation).isPresent();
-        expect.that(suppressWarnings).isAbsent();
+        Assertions.assertTrue(documented.isPresent());
+        Assertions.assertTrue(innerAnnotation.isPresent());
+        Assertions.assertTrue(suppressWarnings.isEmpty());
 
         Element annotationElement = documented.get().getAnnotationType().asElement();
         expect.that(MoreElements.isType(annotationElement)).isTrue();
@@ -355,7 +356,6 @@ public class MoreElementsTest {
         TypeMirror intMirror = types.getPrimitiveType(TypeKind.INT);
         TypeMirror longMirror = types.getPrimitiveType(TypeKind.LONG);
         TypeElement childType = elements.getTypeElement(Child.class.getCanonicalName());
-        @SuppressWarnings("deprecation")
         Set<ExecutableElement> childTypeMethods =
                 MoreElements.getLocalAndInheritedMethods(childType, types, elements);
         Set<ExecutableElement> objectMethods = visibleMethodsFromObject();
@@ -476,13 +476,13 @@ public class MoreElementsTest {
     }
 
     private Set<String> abstractMethodNamesFrom(Set<ExecutableElement> methods) {
-        ImmutableSet.Builder<String> abstractMethodNames = ImmutableSet.builder();
+        Set<String> abstractMethodNames = new LinkedHashSet<>();
         for (ExecutableElement method : methods) {
             if (method.getModifiers().contains(Modifier.ABSTRACT)) {
                 abstractMethodNames.add(method.getSimpleName().toString());
             }
         }
-        return abstractMethodNames.build();
+        return abstractMethodNames;
     }
 
     // Test that getLocalAndInheritedMethods does the right thing with AbstractList. That class

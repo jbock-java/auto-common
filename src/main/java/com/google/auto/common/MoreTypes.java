@@ -15,10 +15,6 @@
  */
 package com.google.auto.common;
 
-import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -43,7 +39,9 @@ import javax.lang.model.util.SimpleTypeVisitor8;
 import javax.lang.model.util.Types;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
@@ -66,12 +64,12 @@ public final class MoreTypes {
 
         @Override
         protected boolean doEquivalent(TypeMirror a, TypeMirror b) {
-            return MoreTypes.equal(a, b, ImmutableSet.<ComparedElements>of());
+            return MoreTypes.equal(a, b, Set.of());
         }
 
         @Override
         protected int doHash(TypeMirror t) {
-            return MoreTypes.hash(t, ImmutableSet.<Element>of());
+            return MoreTypes.hash(t, Set.of());
         }
 
         @Override
@@ -122,15 +120,15 @@ public final class MoreTypes {
 
     private static class ComparedElements {
         final Element a;
-        final ImmutableList<TypeMirror> aArguments;
+        final List<TypeMirror> aArguments;
         final Element b;
-        final ImmutableList<TypeMirror> bArguments;
+        final List<TypeMirror> bArguments;
 
         ComparedElements(
                 Element a,
-                ImmutableList<TypeMirror> aArguments,
+                List<TypeMirror> aArguments,
                 Element b,
-                ImmutableList<TypeMirror> bArguments) {
+                List<TypeMirror> bArguments) {
             this.a = a;
             this.aArguments = aArguments;
             this.b = b;
@@ -274,7 +272,7 @@ public final class MoreTypes {
 
         private Set<ComparedElements> visitingSetPlus(
                 Set<ComparedElements> visiting, Element a, Element b) {
-            ImmutableList<TypeMirror> noArguments = ImmutableList.of();
+            List<TypeMirror> noArguments = List.of();
             return visitingSetPlus(visiting, a, noArguments, b, noArguments);
         }
 
@@ -286,8 +284,8 @@ public final class MoreTypes {
                 List<? extends TypeMirror> bArguments) {
             ComparedElements comparedElements =
                     new ComparedElements(
-                            a, ImmutableList.<TypeMirror>copyOf(aArguments),
-                            b, ImmutableList.<TypeMirror>copyOf(bArguments));
+                            a, List.copyOf(aArguments),
+                            b, List.copyOf(bArguments));
             Set<ComparedElements> newVisiting = new HashSet<ComparedElements>(visiting);
             newVisiting.add(comparedElements);
             return newVisiting;
@@ -460,25 +458,25 @@ public final class MoreTypes {
      * Returns the set of {@linkplain TypeElement types} that are referenced by the given {@link
      * TypeMirror}.
      */
-    public static ImmutableSet<TypeElement> referencedTypes(TypeMirror type) {
+    public static Set<TypeElement> referencedTypes(TypeMirror type) {
         requireNonNull(type);
-        ImmutableSet.Builder<TypeElement> elements = ImmutableSet.builder();
+        HashSet<TypeElement> elements = new LinkedHashSet<>();
         type.accept(ReferencedTypes.INSTANCE, elements);
-        return elements.build();
+        return elements;
     }
 
     private static final class ReferencedTypes
-            extends SimpleTypeVisitor8<Void, ImmutableSet.Builder<TypeElement>> {
+            extends SimpleTypeVisitor8<Void, HashSet<TypeElement>> {
         private static final ReferencedTypes INSTANCE = new ReferencedTypes();
 
         @Override
-        public Void visitArray(ArrayType t, ImmutableSet.Builder<TypeElement> p) {
+        public Void visitArray(ArrayType t, HashSet<TypeElement> p) {
             t.getComponentType().accept(this, p);
             return null;
         }
 
         @Override
-        public Void visitDeclared(DeclaredType t, ImmutableSet.Builder<TypeElement> p) {
+        public Void visitDeclared(DeclaredType t, HashSet<TypeElement> p) {
             p.add(MoreElements.asType(t.asElement()));
             for (TypeMirror typeArgument : t.getTypeArguments()) {
                 typeArgument.accept(this, p);
@@ -487,14 +485,14 @@ public final class MoreTypes {
         }
 
         @Override
-        public Void visitTypeVariable(TypeVariable t, ImmutableSet.Builder<TypeElement> p) {
+        public Void visitTypeVariable(TypeVariable t, HashSet<TypeElement> p) {
             t.getLowerBound().accept(this, p);
             t.getUpperBound().accept(this, p);
             return null;
         }
 
         @Override
-        public Void visitWildcard(WildcardType t, ImmutableSet.Builder<TypeElement> p) {
+        public Void visitWildcard(WildcardType t, HashSet<TypeElement> p) {
             TypeMirror extendsBound = t.getExtendsBound();
             if (extendsBound != null) {
                 extendsBound.accept(this, p);
@@ -551,13 +549,13 @@ public final class MoreTypes {
         return MoreElements.asType(asElement(mirror));
     }
 
-    public static ImmutableSet<TypeElement> asTypeElements(Iterable<? extends TypeMirror> mirrors) {
+    public static Set<TypeElement> asTypeElements(Iterable<? extends TypeMirror> mirrors) {
         requireNonNull(mirrors);
-        ImmutableSet.Builder<TypeElement> builder = ImmutableSet.builder();
+        Set<TypeElement> builder = new LinkedHashSet<>();
         for (TypeMirror mirror : mirrors) {
             builder.add(asTypeElement(mirror));
         }
-        return builder.build();
+        return builder;
     }
 
     /**
@@ -885,7 +883,7 @@ public final class MoreTypes {
 
     /**
      * Returns the superclass of {@code type}, with any type parameters bound by {@code type}, or
-     * {@link Optional#absent()} if {@code type} is an interface or {@link Object} or its superclass
+     * {@link Optional#empty()} if {@code type} is an interface or {@link Object} or its superclass
      * is {@link Object}.
      */
     // TODO(bcorso): Remove unused parameter Elements?
@@ -897,12 +895,12 @@ public final class MoreTypes {
 
         TypeMirror superclassType = asTypeElement(type).getSuperclass();
         if (!isType(superclassType)) { // type is Object or an interface
-            return Optional.absent();
+            return Optional.empty();
         }
 
         DeclaredType superclass = asDeclared(superclassType);
         if (isObjectType(superclass)) {
-            return Optional.absent();
+            return Optional.empty();
         }
 
         if (superclass.getTypeArguments().isEmpty()) {

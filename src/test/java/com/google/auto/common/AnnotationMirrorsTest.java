@@ -35,6 +35,7 @@ import javax.lang.model.util.SimpleAnnotationValueVisitor6;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Map;
+import java.util.Set;
 
 import static com.google.auto.common.AnnotationMirrorsTest.SimpleEnum.BLAH;
 import static com.google.auto.common.AnnotationMirrorsTest.SimpleEnum.FOO;
@@ -393,7 +394,7 @@ public class AnnotationMirrorsTest {
     }
 
     private void getAnnotatedAnnotationsAsserts(
-            ImmutableSet<? extends AnnotationMirror> annotatedAnnotations) {
+            Set<? extends AnnotationMirror> annotatedAnnotations) {
         assertThat(annotatedAnnotations)
                 .comparingElementsUsing(
                         Correspondence.transforming(

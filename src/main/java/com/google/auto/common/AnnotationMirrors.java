@@ -15,9 +15,6 @@
  */
 package com.google.auto.common;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
@@ -28,12 +25,14 @@ import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import java.lang.annotation.Annotation;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 
 import static com.google.auto.common.MoreElements.isAnnotationPresent;
-import static com.google.auto.common.MoreStreams.toImmutableSet;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 
 /**
  * A utility class for working with {@link AnnotationMirror} instances.
@@ -92,9 +91,9 @@ public final class AnnotationMirrors {
      * ExecutableElement}s are defined in {@code annotation}'s {@linkplain
      * AnnotationMirror#getAnnotationType() type}.
      */
-    public static ImmutableMap<ExecutableElement, AnnotationValue> getAnnotationValuesWithDefaults(
+    public static Map<ExecutableElement, AnnotationValue> getAnnotationValuesWithDefaults(
             AnnotationMirror annotation) {
-        ImmutableMap.Builder<ExecutableElement, AnnotationValue> values = ImmutableMap.builder();
+        Map<ExecutableElement, AnnotationValue> values = new LinkedHashMap<>();
         // Use unmodifiableMap to eliminate wildcards, which cause issues for our nullness checker.
         @SuppressWarnings("GetElementValues")
         Map<ExecutableElement, AnnotationValue> declaredValues =
@@ -115,7 +114,7 @@ public final class AnnotationMirrors {
                                 + "()");
             }
         }
-        return values.build();
+        return values;
     }
 
     /**
@@ -159,11 +158,11 @@ public final class AnnotationMirrors {
      * Returns all {@linkplain AnnotationMirror annotations} that are present on the given {@link
      * Element} which are themselves annotated with {@code annotationClass}.
      */
-    public static ImmutableSet<? extends AnnotationMirror> getAnnotatedAnnotations(
+    public static Set<? extends AnnotationMirror> getAnnotatedAnnotations(
             Element element, Class<? extends Annotation> annotationClass) {
         String name = annotationClass.getCanonicalName();
         if (name == null) {
-            return ImmutableSet.of();
+            return Set.of();
         }
         return getAnnotatedAnnotations(element, name);
     }
@@ -172,11 +171,11 @@ public final class AnnotationMirrors {
      * Returns all {@linkplain AnnotationMirror annotations} that are present on the given {@link
      * Element} which are themselves annotated with {@code annotation}.
      */
-    public static ImmutableSet<? extends AnnotationMirror> getAnnotatedAnnotations(
+    public static Set<? extends AnnotationMirror> getAnnotatedAnnotations(
             Element element, TypeElement annotation) {
         return element.getAnnotationMirrors().stream()
                 .filter(input -> isAnnotationPresent(input.getAnnotationType().asElement(), annotation))
-                .collect(toImmutableSet());
+                .collect(toUnmodifiableSet());
     }
 
     /**
@@ -184,11 +183,11 @@ public final class AnnotationMirrors {
      * Element} which are themselves annotated with an annotation whose type's canonical name is
      * {@code annotationName}.
      */
-    public static ImmutableSet<? extends AnnotationMirror> getAnnotatedAnnotations(
+    public static Set<? extends AnnotationMirror> getAnnotatedAnnotations(
             Element element, String annotationName) {
         return element.getAnnotationMirrors().stream()
                 .filter(input -> isAnnotationPresent(input.getAnnotationType().asElement(), annotationName))
-                .collect(toImmutableSet());
+                .collect(toUnmodifiableSet());
     }
 
     /**

@@ -17,11 +17,6 @@
 package com.google.auto.common;
 
 import com.google.auto.common.Overrides.ExplicitOverrides;
-import com.google.common.annotations.Beta;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.SetMultimap;
 
@@ -43,9 +38,12 @@ import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
-import static com.google.auto.common.MoreStreams.toImmutableSet;
+import static java.util.stream.Collectors.toUnmodifiableSet;
 import static javax.lang.model.element.ElementKind.PACKAGE;
 import static javax.lang.model.element.Modifier.STATIC;
 
@@ -54,7 +52,6 @@ import static javax.lang.model.element.Modifier.STATIC;
  *
  * @author Gregory Kick
  */
-@Beta
 public final class MoreElements {
     /**
      * An alternate implementation of {@link Elements#getPackageOf} that does not require an
@@ -248,7 +245,7 @@ public final class MoreElements {
 
     /**
      * Returns an {@link AnnotationMirror} for the annotation of type {@code annotationClass} on
-     * {@code element}, or {@link Optional#absent()} if no such annotation exists. This method is a
+     * {@code element}, or {@link Optional#empty()} if no such annotation exists. This method is a
      * safer alternative to calling {@link Element#getAnnotation} as it avoids any interaction with
      * annotation proxies.
      */
@@ -256,14 +253,14 @@ public final class MoreElements {
             Element element, Class<? extends Annotation> annotationClass) {
         String name = annotationClass.getCanonicalName();
         if (name == null) {
-            return Optional.absent();
+            return Optional.empty();
         }
         return getAnnotationMirror(element, name);
     }
 
     /**
      * Returns an {@link AnnotationMirror} for the annotation of type {@code annotation} on {@code
-     * element}, or {@link Optional#absent()} if no such annotation exists. This method is a safer
+     * element}, or {@link Optional#empty()} if no such annotation exists. This method is a safer
      * alternative to calling {@link Element#getAnnotation} as it avoids any interaction with
      * annotation proxies.
      */
@@ -274,12 +271,12 @@ public final class MoreElements {
                 return Optional.of(elementAnnotation);
             }
         }
-        return Optional.absent();
+        return Optional.empty();
     }
 
     /**
      * Returns an {@link AnnotationMirror} for the annotation whose type's canonical name is on {@code
-     * element}, or {@link Optional#absent()} if no such annotation exists. This method is a safer
+     * element}, or {@link Optional#empty()} if no such annotation exists. This method is a safer
      * alternative to calling {@link Element#getAnnotation} as it avoids any interaction with
      * annotation proxies.
      */
@@ -291,7 +288,7 @@ public final class MoreElements {
                 return Optional.of(annotationMirror);
             }
         }
-        return Optional.absent();
+        return Optional.empty();
     }
 
     /**
@@ -306,7 +303,7 @@ public final class MoreElements {
      * }</pre>
      */
     public static <T extends Element> Predicate<T> hasModifiers(Modifier... modifiers) {
-        return hasModifiers(ImmutableSet.copyOf(modifiers));
+        return hasModifiers(Set.of(modifiers));
     }
 
     /**
@@ -322,12 +319,7 @@ public final class MoreElements {
      * </pre>
      */
     public static <T extends Element> Predicate<T> hasModifiers(final Set<Modifier> modifiers) {
-        return new Predicate<T>() {
-            @Override
-            public boolean apply(T input) {
-                return input.getModifiers().containsAll(modifiers);
-            }
-        };
+        return input -> input.getModifiers().containsAll(modifiers);
     }
 
     /**
@@ -358,7 +350,7 @@ public final class MoreElements {
      *     has better consistency between Java compilers.
      */
     @Deprecated
-    public static ImmutableSet<ExecutableElement> getLocalAndInheritedMethods(
+    public static Set<ExecutableElement> getLocalAndInheritedMethods(
             TypeElement type, Elements elementUtils) {
         Overrides overrides = new Overrides.NativeOverrides(elementUtils);
         return getLocalAndInheritedMethods(type, overrides);
@@ -392,23 +384,23 @@ public final class MoreElements {
      *     -->.{@link javax.annotation.processing.ProcessingEnvironment#getElementUtils
      *     getElementUtils()}
      */
-    public static ImmutableSet<ExecutableElement> getLocalAndInheritedMethods(
+    public static Set<ExecutableElement> getLocalAndInheritedMethods(
             TypeElement type, Types typeUtils, Elements elementUtils) {
         return getLocalAndInheritedMethods(type, new ExplicitOverrides(typeUtils));
     }
 
-    private static ImmutableSet<ExecutableElement> getLocalAndInheritedMethods(
+    private static Set<ExecutableElement> getLocalAndInheritedMethods(
             TypeElement type, Overrides overrides) {
         PackageElement pkg = getPackage(type);
 
-        ImmutableSet.Builder<ExecutableElement> methods = ImmutableSet.builder();
+        Set<ExecutableElement> methods = new LinkedHashSet<>();
         for (ExecutableElement method : getAllMethods(type, overrides)) {
             // Filter out all static and non-visible methods.
             if (!method.getModifiers().contains(STATIC) && methodVisibleFromPackage(method, pkg)) {
                 methods.add(method);
             }
         }
-        return methods.build();
+        return methods;
     }
 
     /**
@@ -459,12 +451,12 @@ public final class MoreElements {
      *     -->.{@link javax.annotation.processing.ProcessingEnvironment#getElementUtils
      *     getElementUtils()}
      */
-    public static ImmutableSet<ExecutableElement> getAllMethods(
+    public static Set<ExecutableElement> getAllMethods(
             TypeElement type, Types typeUtils, Elements elementUtils) {
         return getAllMethods(type, new ExplicitOverrides(typeUtils));
     }
 
-    private static ImmutableSet<ExecutableElement> getAllMethods(
+    private static Set<ExecutableElement> getAllMethods(
             TypeElement type, Overrides overrides) {
         SetMultimap<String, ExecutableElement> methodMap = LinkedHashMultimap.create();
         getAllMethods(type, methodMap);
@@ -476,7 +468,7 @@ public final class MoreElements {
         // check a method against the ones that follow it in that order.
         Set<ExecutableElement> overridden = new LinkedHashSet<ExecutableElement>();
         for (Collection<ExecutableElement> methods : methodMap.asMap().values()) {
-            List<ExecutableElement> methodList = ImmutableList.copyOf(methods);
+            List<ExecutableElement> methodList = List.copyOf(methods);
             for (int i = 0; i < methodList.size(); i++) {
                 ExecutableElement methodI = methodList.get(i);
                 for (int j = i + 1; j < methodList.size(); j++) {
@@ -490,7 +482,7 @@ public final class MoreElements {
         }
         return methodMap.values().stream()
                 .filter(m -> !overridden.contains(m))
-                .collect(toImmutableSet());
+                .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     // Add to `methods` the static and instance methods from `type`. This means all methods from

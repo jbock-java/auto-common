@@ -15,7 +15,6 @@
  */
 package com.google.auto.common;
 
-import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -27,6 +26,7 @@ import com.google.testing.compile.CompilationRule;
 import org.checkerframework.checker.nullness.qual.Nullable;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
@@ -48,6 +48,7 @@ import javax.lang.model.util.Types;
 import java.lang.annotation.Annotation;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import static com.google.auto.common.AnnotationMirrorsTest.equivalenceTesterOf;
@@ -283,7 +284,7 @@ public class MoreTypesTest {
         assertThat(referencedTypes(fieldIndex, "f12")).containsExactly(setElement, stringElement);
     }
 
-    private static ImmutableSet<TypeElement> referencedTypes(
+    private static Set<TypeElement> referencedTypes(
             ImmutableMap<String, VariableElement> fieldIndex, String fieldName) {
         VariableElement field = fieldIndex.get(fieldName);
         requireNonNull(field, fieldName);
@@ -360,12 +361,9 @@ public class MoreTypesTest {
         TypeMirror interfaceType =
                 elements.getTypeElement(InterfaceType.class.getCanonicalName()).asType();
 
-        assertThat(MoreTypes.nonObjectSuperclass(types, elements, (DeclaredType) objectType))
-                .isAbsent();
-        assertThat(MoreTypes.nonObjectSuperclass(types, elements, (DeclaredType) interfaceType))
-                .isAbsent();
-        assertThat(MoreTypes.nonObjectSuperclass(types, elements, (DeclaredType) parent.asType()))
-                .isAbsent();
+        Assertions.assertTrue(MoreTypes.nonObjectSuperclass(types, elements, (DeclaredType) objectType).isEmpty());
+        Assertions.assertTrue(MoreTypes.nonObjectSuperclass(types, elements, (DeclaredType) interfaceType).isEmpty());
+        Assertions.assertTrue(MoreTypes.nonObjectSuperclass(types, elements, (DeclaredType) parent.asType()).isEmpty());
 
         Optional<DeclaredType> parentOfChildA =
                 MoreTypes.nonObjectSuperclass(types, elements, (DeclaredType) childA.asType());
