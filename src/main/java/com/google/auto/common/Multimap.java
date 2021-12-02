@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.Spliterator;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -57,6 +58,16 @@ final class Multimap<K, V>  {
         });
     }
 
+    void putAll(Multimap<K, V> multimap) {
+        multimap.stream().forEach(e -> put(e.getKey(), e.getValue()));
+    }
+
+    void putAll(K key, Collection<V> values) {
+        for (V value : values) {
+            put(key, value);
+        }
+    }
+
     /* Values in insertion order. */
     Set<V> flatValues() {
         return set;
@@ -64,6 +75,10 @@ final class Multimap<K, V>  {
 
     Collection<Set<V>> values() {
         return map.values();
+    }
+
+    Set<V> get(K key) {
+        return map.getOrDefault(key, Set.of());
     }
 
     /* Entries in no particular order. */
@@ -103,7 +118,16 @@ final class Multimap<K, V>  {
         return map.isEmpty();
     }
 
-    Map<K, Set<V>> toMap() {
+    Multimap<K, V> filterKeys(Predicate<? super K> keyPredicate) {
+        Multimap<K, V> result = create();
+        map.entrySet()
+                .stream()
+                .filter(e -> keyPredicate.test(e.getKey()))
+                .forEach(e -> e.getValue().forEach(v -> result.put(e.getKey(), v)));
+        return result;
+    }
+
+    Map<K, Set<V>> asMap() {
         return new HashMap<>(map);
     }
 }

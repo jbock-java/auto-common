@@ -15,12 +15,8 @@
  */
 package com.google.auto.common;
 
-import com.google.auto.common.BasicAnnotationProcessor.ProcessingStep;
-import com.google.auto.common.BasicAnnotationProcessor.Step;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSetMultimap;
-import com.google.common.collect.SetMultimap;
 import com.google.common.truth.Correspondence;
 import com.google.testing.compile.Compilation;
 import com.google.testing.compile.CompilationRule;
@@ -34,15 +30,21 @@ import javax.annotation.processing.Filer;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.util.Elements;
 import javax.tools.JavaFileObject;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
-import static com.google.common.collect.Multimaps.transformValues;
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.testing.compile.CompilationSubject.assertThat;
@@ -76,36 +78,36 @@ public class BasicAnnotationProcessorTest {
     private static class RequiresGeneratedCodeProcessor extends BaseAnnotationProcessor {
 
         int rejectedRounds;
-        final ImmutableList.Builder<ImmutableSetMultimap<String, Element>> processArguments =
-                ImmutableList.builder();
+        final List<Map<String, Set<Element>>> processArguments =
+                new ArrayList<>();
 
         @Override
         protected Iterable<? extends Step> steps() {
             return ImmutableSet.of(
                     new Step() {
                         @Override
-                        public ImmutableSet<? extends Element> process(
-                                ImmutableSetMultimap<String, Element> elementsByAnnotation) {
-                            processArguments.add(ImmutableSetMultimap.copyOf(elementsByAnnotation));
+                        public Set<? extends Element> process(
+                                Map<String, Set<Element>> elementsByAnnotation) {
+                            processArguments.add(elementsByAnnotation);
                             TypeElement requiredClass =
                                     processingEnv.getElementUtils().getTypeElement("test.SomeGeneratedClass");
                             if (requiredClass == null) {
                                 rejectedRounds++;
-                                return ImmutableSet.copyOf(elementsByAnnotation.values());
+                                return elementsByAnnotation.values().stream().flatMap(Collection::stream).collect(Collectors.toSet());
                             }
                             generateClass(processingEnv.getFiler(), "GeneratedByRequiresGeneratedCodeProcessor");
-                            return ImmutableSet.of();
+                            return Set.of();
                         }
 
                         @Override
-                        public ImmutableSet<String> annotations() {
-                            return ImmutableSet.of(ENCLOSING_CLASS_NAME + ".RequiresGeneratedCode");
+                        public Set<String> annotations() {
+                            return Set.of(ENCLOSING_CLASS_NAME + ".RequiresGeneratedCode");
                         }
                     },
                     new Step() {
                         @Override
                         public ImmutableSet<? extends Element> process(
-                                ImmutableSetMultimap<String, Element> elementsByAnnotation) {
+                                Map<String, Set<Element>> elementsByAnnotation) {
                             return ImmutableSet.of();
                         }
 
@@ -116,8 +118,8 @@ public class BasicAnnotationProcessorTest {
                     });
         }
 
-        ImmutableList<ImmutableSetMultimap<String, Element>> processArguments() {
-            return processArguments.build();
+        List<Map<String, Set<Element>>> processArguments() {
+            return processArguments;
         }
     }
 
@@ -133,7 +135,7 @@ public class BasicAnnotationProcessorTest {
                     new Step() {
                         @Override
                         public ImmutableSet<? extends Element> process(
-                                ImmutableSetMultimap<String, Element> elementsByAnnotation) {
+                                Map<String, Set<Element>> elementsByAnnotation) {
                             generateClass(processingEnv.getFiler(), "SomeGeneratedClass");
                             return ImmutableSet.of();
                         }
@@ -158,8 +160,8 @@ public class BasicAnnotationProcessorTest {
                     new Step() {
                         @Override
                         public ImmutableSet<Element> process(
-                                ImmutableSetMultimap<String, Element> elementsByAnnotation) {
-                            for (Element element : elementsByAnnotation.values()) {
+                                Map<String, Set<Element>> elementsByAnnotation) {
+                            for (Element element : elementsByAnnotation.values().stream().flatMap(Collection::stream).collect(Collectors.toSet())) {
                                 generateClass(processingEnv.getFiler(), element.getSimpleName() + "XYZ");
                             }
                             return ImmutableSet.of();
@@ -185,16 +187,19 @@ public class BasicAnnotationProcessorTest {
             return ImmutableSet.of(
                     new Step() {
                         @Override
-                        public ImmutableSet<Element> process(
-                                ImmutableSetMultimap<String, Element> elementsByAnnotation) {
-                            for (Element e : elementsByAnnotation.values()) {
+                        public Set<Element> process(
+                                Map<String, Set<Element>> elementsByAnnotation) {
+                            Set<Element> allElements = elementsByAnnotation.values().stream()
+                                    .flatMap(Collection::stream)
+                                    .collect(Collectors.toSet());
+                            for (Element e : allElements) {
                                 processingEnv.getMessager().printMessage(ERROR, "purposeful error", e);
                             }
-                            return ImmutableSet.copyOf(elementsByAnnotation.values());
+                            return allElements;
                         }
 
                         @Override
-                        public ImmutableSet<String> annotations() {
+                        public Set<String> annotations() {
                             return ImmutableSet.of(ENCLOSING_CLASS_NAME + ".CauseError");
                         }
                     });
@@ -203,53 +208,31 @@ public class BasicAnnotationProcessorTest {
 
     public static class MissingAnnotationProcessor extends BaseAnnotationProcessor {
 
-        private ImmutableSetMultimap<String, Element> elementsByAnnotation;
+        private Map<String, Set<Element>> elementsByAnnotation;
 
         @Override
         protected Iterable<? extends Step> steps() {
             return ImmutableSet.of(
                     new Step() {
                         @Override
-                        public ImmutableSet<Element> process(
-                                ImmutableSetMultimap<String, Element> elementsByAnnotation) {
+                        public Set<Element> process(
+                                Map<String, Set<Element>> elementsByAnnotation) {
                             MissingAnnotationProcessor.this.elementsByAnnotation = elementsByAnnotation;
-                            for (Element element : elementsByAnnotation.values()) {
+                            for (Element element : elementsByAnnotation.values().stream().flatMap(Collection::stream).collect(Collectors.toSet())) {
                                 generateClass(processingEnv.getFiler(), element.getSimpleName() + "XYZ");
                             }
-                            return ImmutableSet.of();
+                            return Set.of();
                         }
 
                         @Override
-                        public ImmutableSet<String> annotations() {
-                            return ImmutableSet.of(
+                        public Set<String> annotations() {
+                            return Set.of(
                                     "test.SomeNonExistentClass", ENCLOSING_CLASS_NAME + ".AnAnnotation");
                         }
                     });
         }
 
-        ImmutableSetMultimap<String, Element> getElementsByAnnotation() {
-            return elementsByAnnotation;
-        }
-    }
-
-    @SuppressWarnings("deprecation") // Deprecated ProcessingStep is being explicitly tested.
-    static final class MultiAnnotationProcessingStep implements ProcessingStep {
-
-        private SetMultimap<Class<? extends Annotation>, Element> elementsByAnnotation;
-
-        @Override
-        public ImmutableSet<? extends Class<? extends Annotation>> annotations() {
-            return ImmutableSet.of(AnAnnotation.class, ReferencesAClass.class);
-        }
-
-        @Override
-        public ImmutableSet<? extends Element> process(
-                SetMultimap<Class<? extends Annotation>, Element> elementsByAnnotation) {
-            this.elementsByAnnotation = elementsByAnnotation;
-            return ImmutableSet.of();
-        }
-
-        SetMultimap<Class<? extends Annotation>, Element> getElementsByAnnotation() {
+        Map<String, Set<Element>> getElementsByAnnotation() {
             return elementsByAnnotation;
         }
     }
@@ -407,19 +390,27 @@ public class BasicAnnotationProcessorTest {
 
         // Re b/118372780: Assert that the right deferred elements are passed back, and not any enclosed
         // elements annotated with annotations from a different step.
-        assertThat(requiresGeneratedCodeProcessor.processArguments())
+        List<Map<String, Set<Element>>> actual = requiresGeneratedCodeProcessor.processArguments();
+        assertThat(actual)
                 .comparingElementsUsing(setMultimapValuesByString())
                 .containsExactly(
-                        ImmutableSetMultimap.of(RequiresGeneratedCode.class.getCanonicalName(), "test.ClassA"),
-                        ImmutableSetMultimap.of(RequiresGeneratedCode.class.getCanonicalName(), "test.ClassA"))
+                        Map.of(RequiresGeneratedCode.class.getCanonicalName(), Set.of("test.ClassA")),
+                        Map.of(RequiresGeneratedCode.class.getCanonicalName(), Set.of("test.ClassA")))
                 .inOrder();
     }
 
     private static <K, V>
-    Correspondence<SetMultimap<K, V>, SetMultimap<K, String>> setMultimapValuesByString() {
+    Correspondence<Map<K, Set<V>>, Map<K, Set<String>>> setMultimapValuesByString() {
         return Correspondence.from(
-                (actual, expected) ->
-                        ImmutableSetMultimap.copyOf(transformValues(actual, Object::toString)).equals(expected),
+                (actual, expected) -> {
+                    Map<K, Set<String>> transformed = new LinkedHashMap<>();
+                    for (Map.Entry<K, Set<V>> e : actual.entrySet()) {
+                        transformed.put(e.getKey(), e.getValue().stream()
+                                .map(Objects::toString)
+                                .collect(Collectors.toCollection(LinkedHashSet::new)));
+                    }
+                    return transformed.equals(expected);
+                },
                 "is equivalent comparing multimap values by `toString()` to");
     }
 
@@ -494,45 +485,6 @@ public class BasicAnnotationProcessorTest {
                 .failsToCompile()
                 .withErrorCount(1)
                 .withErrorContaining("purposeful");
-    }
-
-    @Test
-    public void processingStepAsStepAnnotationsNamesMatchClasses() {
-        Step step = BasicAnnotationProcessor.asStep(new MultiAnnotationProcessingStep());
-
-        assertThat(step.annotations())
-                .containsExactly(
-                        AnAnnotation.class.getCanonicalName(), ReferencesAClass.class.getCanonicalName());
-    }
-
-    /**
-     * Tests that a {@link ProcessingStep} passed to {@link
-     * BasicAnnotationProcessor#asStep(ProcessingStep)} still gets passed the correct arguments to
-     * {@link Step#process(ImmutableSetMultimap)}.
-     */
-    @Test
-    public void processingStepAsStepProcessElementsMatchClasses() {
-        Elements elements = compilation.getElements();
-        String anAnnotationName = AnAnnotation.class.getCanonicalName();
-        String referencesAClassName = ReferencesAClass.class.getCanonicalName();
-        TypeElement anAnnotationElement = elements.getTypeElement(anAnnotationName);
-        TypeElement referencesAClassElement = elements.getTypeElement(referencesAClassName);
-        MultiAnnotationProcessingStep processingStep = new MultiAnnotationProcessingStep();
-
-        BasicAnnotationProcessor.asStep(processingStep)
-                .process(
-                        ImmutableSetMultimap.of(
-                                anAnnotationName,
-                                anAnnotationElement,
-                                referencesAClassName,
-                                referencesAClassElement));
-
-        assertThat(processingStep.getElementsByAnnotation())
-                .containsExactly(
-                        AnAnnotation.class,
-                        anAnnotationElement,
-                        ReferencesAClass.class,
-                        referencesAClassElement);
     }
 
     private static void generateClass(Filer filer, String generatedClassName) {
