@@ -15,9 +15,6 @@
  */
 package com.google.auto.common;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Iterables;
-
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.AnnotationValueVisitor;
@@ -25,6 +22,8 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleAnnotationValueVisitor8;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -148,8 +147,8 @@ final class AnnotationOutput {
         @Override
         public Void visitAnnotation(AnnotationMirror a, StringBuilder sb) {
             sb.append('@').append(formatType(a.getAnnotationType()));
-            ImmutableMap<ExecutableElement, AnnotationValue> map =
-                    ImmutableMap.copyOf(a.getElementValues());
+            Map<ExecutableElement, AnnotationValue> map =
+                    new LinkedHashMap<>(a.getElementValues());
             if (!map.isEmpty()) {
                 sb.append('(');
                 Optional<AnnotationValue> shortForm = shortForm(map);
@@ -182,7 +181,7 @@ final class AnnotationOutput {
                         // We can shorten @Foo(a = {23}) to @Foo(a = 23). For the specific case where `a` is
                         // actually `value`, we'll already have shortened that in visitAnnotation, so
                         // effectively we go from @Foo(value = {23}) to @Foo({23}) to @Foo(23).
-                        return Iterables.getOnlyElement(values);
+                        return values.get(0);
                     }
                     return input;
                 }
@@ -197,8 +196,8 @@ final class AnnotationOutput {
     private static Optional<AnnotationValue> shortForm(
             Map<ExecutableElement, AnnotationValue> values) {
         if (values.size() == 1
-                && Iterables.getOnlyElement(values.keySet()).getSimpleName().contentEquals("value")) {
-            return Optional.of(Iterables.getOnlyElement(values.values()));
+                && values.keySet().iterator().next().getSimpleName().contentEquals("value")) {
+            return Optional.of(values.values().iterator().next());
         }
         return Optional.empty();
     }
