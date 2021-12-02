@@ -16,11 +16,6 @@
 package com.google.auto.common;
 
 import com.google.common.base.Ascii;
-import com.google.common.base.Predicates;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.ImmutableSetMultimap;
-import com.google.common.collect.LinkedHashMultimap;
-import com.google.common.collect.SetMultimap;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Messager;
@@ -35,8 +30,8 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ErrorType;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleElementVisitor8;
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -49,9 +44,7 @@ import java.util.stream.Stream;
 import static com.google.auto.common.MoreElements.asExecutable;
 import static com.google.auto.common.MoreElements.asPackage;
 import static com.google.auto.common.SuperficialValidation.validateElement;
-import static com.google.common.collect.Multimaps.filterKeys;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toUnmodifiableMap;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static javax.lang.model.element.ElementKind.PACKAGE;
 import static javax.tools.Diagnostic.Kind.ERROR;
@@ -105,8 +98,8 @@ import static javax.tools.Diagnostic.Kind.ERROR;
 public abstract class BasicAnnotationProcessor extends AbstractProcessor {
 
     private final Set<ElementName> deferredElementNames = new LinkedHashSet<>();
-    private final SetMultimap<Step, ElementName> elementsDeferredBySteps =
-            LinkedHashMultimap.create();
+    private final Map<Step, Set<ElementName>> elementsDeferredBySteps =
+            new LinkedHashMap<>();
 
     private Elements elements;
     private Messager messager;
@@ -181,9 +174,8 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
         if (roundEnv.processingOver()) {
             postRound(roundEnv);
             if (!roundEnv.errorRaised()) {
-                Set<ElementName> missingElements = new LinkedHashSet<>();
-                missingElements.addAll(deferredElementNames);
-                missingElements.addAll(elementsDeferredBySteps.values());
+                Set<ElementName> missingElements = new LinkedHashSet<>(deferredElementNames);
+                elementsDeferredBySteps.values().forEach(missingElements::addAll);
                 reportMissingElements(missingElements);
             }
             return false;
@@ -201,15 +193,15 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
         for (Step step : steps) {
             Set<TypeElement> annotationTypes = getSupportedAnnotationTypeElements(step);
             Multimap<TypeElement, Element> stepElements = Multimap.create();
-            stepElements.putAll(indexByAnnotation(elementsDeferredBySteps.get(step), annotationTypes));
+            stepElements.putAll(indexByAnnotation(elementsDeferredBySteps.getOrDefault(step, Set.of()), annotationTypes));
             stepElements.putAll(validElements.filterKeys(annotationTypes::contains));
             if (stepElements.isEmpty()) {
-                elementsDeferredBySteps.removeAll(step);
+                elementsDeferredBySteps.remove(step);
             } else {
                 Set<? extends Element> rejectedElements =
                         step.process(toClassNameKeyedMultimap(stepElements));
-                elementsDeferredBySteps.replaceValues(
-                        step, rejectedElements.stream().map(ElementName::forAnnotatedElement).collect(Collectors.toList()));
+                elementsDeferredBySteps.put(
+                        step, rejectedElements.stream().map(ElementName::forAnnotatedElement).collect(Collectors.toSet()));
             }
         }
     }
