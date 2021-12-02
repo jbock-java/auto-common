@@ -15,7 +15,6 @@
  */
 package com.google.auto.common;
 
-import com.google.common.collect.ImmutableSet;
 import com.google.common.testing.EquivalenceTester;
 import com.google.common.truth.Correspondence;
 import com.google.testing.compile.CompilationRule;

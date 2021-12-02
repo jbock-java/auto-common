@@ -172,7 +172,7 @@ final class AnnotationOutput {
     }
 
     private static final AnnotationValueVisitor<AnnotationValue, AnnotationValue> ARRAY_VISITOR =
-            new SimpleAnnotationValueVisitor8<AnnotationValue, AnnotationValue>() {
+            new SimpleAnnotationValueVisitor8<>() {
                 @Override
                 public AnnotationValue visitArray(
                         List<? extends AnnotationValue> values, AnnotationValue input) {

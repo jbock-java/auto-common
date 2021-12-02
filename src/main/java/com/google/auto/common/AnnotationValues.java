@@ -34,11 +34,11 @@ import static java.util.stream.Collectors.toUnmodifiableList;
  */
 public final class AnnotationValues {
     private static final Equivalence<AnnotationValue> ANNOTATION_VALUE_EQUIVALENCE =
-            new Equivalence<AnnotationValue>() {
+            new Equivalence<>() {
                 @Override
                 protected boolean doEquivalent(AnnotationValue left, AnnotationValue right) {
                     return left.accept(
-                            new SimpleAnnotationValueVisitor8<Boolean, AnnotationValue>() {
+                            new SimpleAnnotationValueVisitor8<>() {
                                 // LHS is not an annotation or array of annotation values, so just test equality.
                                 @Override
                                 protected Boolean defaultAction(Object left, AnnotationValue right) {
@@ -58,7 +58,7 @@ public final class AnnotationValues {
                                 @Override
                                 public Boolean visitAnnotation(AnnotationMirror left, AnnotationValue right) {
                                     return right.accept(
-                                            new SimpleAnnotationValueVisitor8<Boolean, AnnotationMirror>() {
+                                            new SimpleAnnotationValueVisitor8<>() {
                                                 @Override
                                                 protected Boolean defaultAction(Object right, AnnotationMirror left) {
                                                     return false; // Not an annotation mirror, so can't be equal to such.
@@ -104,7 +104,7 @@ public final class AnnotationValues {
                                 @Override
                                 public Boolean visitType(TypeMirror left, AnnotationValue right) {
                                     return right.accept(
-                                            new SimpleAnnotationValueVisitor8<Boolean, TypeMirror>() {
+                                            new SimpleAnnotationValueVisitor8<>() {
                                                 @Override
                                                 protected Boolean defaultAction(Object ignored, TypeMirror alsoIgnored) {
                                                     return false; // Not an annotation mirror, so can't be equal to such.
@@ -191,8 +191,6 @@ public final class AnnotationValues {
         }
     }
 
-    ;
-
     /**
      * Returns the value as a class.
      *
@@ -214,8 +212,6 @@ public final class AnnotationValues {
             return value;
         }
     }
-
-    ;
 
     /**
      * Returns the value as an AnnotationMirror.

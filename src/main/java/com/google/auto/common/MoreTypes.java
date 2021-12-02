@@ -286,7 +286,7 @@ public final class MoreTypes {
                     new ComparedElements(
                             a, List.copyOf(aArguments),
                             b, List.copyOf(bArguments));
-            Set<ComparedElements> newVisiting = new HashSet<ComparedElements>(visiting);
+            Set<ComparedElements> newVisiting = new HashSet<>(visiting);
             newVisiting.add(comparedElements);
             return newVisiting;
         }
@@ -386,7 +386,7 @@ public final class MoreTypes {
             if (visiting.contains(element)) {
                 return 0;
             }
-            Set<Element> newVisiting = new HashSet<Element>(visiting);
+            Set<Element> newVisiting = new HashSet<>(visiting);
             newVisiting.add(element);
             int result = hashKind(HASH_SEED, t);
             result *= HASH_MULTIPLIER;

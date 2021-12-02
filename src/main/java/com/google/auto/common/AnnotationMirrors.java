@@ -41,7 +41,7 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
  */
 public final class AnnotationMirrors {
     private static final Equivalence<AnnotationMirror> ANNOTATION_MIRROR_EQUIVALENCE =
-            new Equivalence<AnnotationMirror>() {
+            new Equivalence<>() {
                 @Override
                 protected boolean doEquivalent(AnnotationMirror left, AnnotationMirror right) {
                     return MoreTypes.equivalence()

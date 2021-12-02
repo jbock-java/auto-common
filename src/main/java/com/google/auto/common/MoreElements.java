@@ -17,8 +17,6 @@
 package com.google.auto.common;
 
 import com.google.auto.common.Overrides.ExplicitOverrides;
-import com.google.common.collect.LinkedHashMultimap;
-import com.google.common.collect.SetMultimap;
 
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
@@ -43,7 +41,6 @@ import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toUnmodifiableSet;
 import static javax.lang.model.element.ElementKind.PACKAGE;
 import static javax.lang.model.element.Modifier.STATIC;
 
@@ -458,7 +455,7 @@ public final class MoreElements {
 
     private static Set<ExecutableElement> getAllMethods(
             TypeElement type, Overrides overrides) {
-        SetMultimap<String, ExecutableElement> methodMap = LinkedHashMultimap.create();
+        Multimap<String, ExecutableElement> methodMap = Multimap.create();
         getAllMethods(type, methodMap);
         // Find methods that are overridden. We do this using `Elements.overrides`, which means
         // that it is inherently a quadratic operation, since we have to compare every method against
@@ -480,7 +477,7 @@ public final class MoreElements {
                 }
             }
         }
-        return methodMap.values().stream()
+        return methodMap.flatValues().stream()
                 .filter(m -> !overridden.contains(m))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
@@ -492,7 +489,7 @@ public final class MoreElements {
     // including methods that override or overload one another. Within those methods, those in
     // ancestor types always precede those in descendant types.
     private static void getAllMethods(
-            TypeElement type, SetMultimap<String, ExecutableElement> methods) {
+            TypeElement type, Multimap<String, ExecutableElement> methods) {
         for (TypeMirror superInterface : type.getInterfaces()) {
             getAllMethods(MoreTypes.asTypeElement(superInterface), methods);
         }

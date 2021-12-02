@@ -15,8 +15,6 @@
  */
 package com.google.auto.common;
 
-import com.google.common.base.Ascii;
-
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
@@ -34,6 +32,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -213,7 +212,7 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
                 messager.printMessage(
                         ERROR,
                         processingErrorMessage(
-                                "this " + Ascii.toLowerCase(missingElement.get().getKind().name())),
+                                "this " + missingElement.get().getKind().name().toLowerCase(Locale.ROOT)),
                         missingElement.get());
             } else {
                 messager.printMessage(ERROR, processingErrorMessage(missingElementName.name()));
