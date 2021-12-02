@@ -32,8 +32,8 @@ import java.util.Map;
 
 import static com.google.auto.common.MoreElements.isAnnotationPresent;
 import static com.google.auto.common.MoreStreams.toImmutableSet;
-import static com.google.common.base.Preconditions.checkNotNull;
 import static java.util.Collections.unmodifiableMap;
+import static java.util.Objects.requireNonNull;
 
 /**
  * A utility class for working with {@link AnnotationMirror} instances.
@@ -139,8 +139,8 @@ public final class AnnotationMirrors {
      */
     public static Map.Entry<ExecutableElement, AnnotationValue> getAnnotationElementAndValue(
             AnnotationMirror annotationMirror, final String elementName) {
-        checkNotNull(annotationMirror);
-        checkNotNull(elementName);
+        requireNonNull(annotationMirror);
+        requireNonNull(elementName);
         for (Map.Entry<ExecutableElement, AnnotationValue> entry :
                 getAnnotationValuesWithDefaults(annotationMirror).entrySet()) {
             if (entry.getKey().getSimpleName().contentEquals(elementName)) {

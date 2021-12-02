@@ -46,8 +46,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
+import static java.util.Objects.requireNonNull;
 import static javax.lang.model.type.TypeKind.ARRAY;
 import static javax.lang.model.type.TypeKind.DECLARED;
 import static javax.lang.model.type.TypeKind.EXECUTABLE;
@@ -462,7 +461,7 @@ public final class MoreTypes {
      * TypeMirror}.
      */
     public static ImmutableSet<TypeElement> referencedTypes(TypeMirror type) {
-        checkNotNull(type);
+        requireNonNull(type);
         ImmutableSet.Builder<TypeElement> elements = ImmutableSet.builder();
         type.accept(ReferencedTypes.INSTANCE, elements);
         return elements.build();
@@ -553,7 +552,7 @@ public final class MoreTypes {
     }
 
     public static ImmutableSet<TypeElement> asTypeElements(Iterable<? extends TypeMirror> mirrors) {
-        checkNotNull(mirrors);
+        requireNonNull(mirrors);
         ImmutableSet.Builder<TypeElement> builder = ImmutableSet.builder();
         for (TypeMirror mirror : mirrors) {
             builder.add(asTypeElement(mirror));
@@ -819,7 +818,7 @@ public final class MoreTypes {
      * TypeMirror} does not represent a type that can be referenced by a {@link Class}
      */
     public static boolean isTypeOf(final Class<?> clazz, TypeMirror type) {
-        checkNotNull(clazz);
+        requireNonNull(clazz);
         return type.accept(new IsTypeOf(clazz), null);
     }
 
@@ -892,9 +891,9 @@ public final class MoreTypes {
     // TODO(bcorso): Remove unused parameter Elements?
     public static Optional<DeclaredType> nonObjectSuperclass(
             Types types, Elements elements, DeclaredType type) {
-        checkNotNull(types);
-        checkNotNull(elements); // This is no longer used, but here to avoid changing the API.
-        checkNotNull(type);
+        requireNonNull(types);
+        requireNonNull(elements); // This is no longer used, but here to avoid changing the API.
+        requireNonNull(type);
 
         TypeMirror superclassType = asTypeElement(type).getSuperclass();
         if (!isType(superclassType)) { // type is Object or an interface
@@ -937,7 +936,7 @@ public final class MoreTypes {
                     MoreTypes.asExecutable(types.asMemberOf(container, methodOrConstructor));
             List<? extends VariableElement> parameters = methodOrConstructor.getParameters();
             List<? extends TypeMirror> parameterTypes = resolvedMethodOrConstructor.getParameterTypes();
-            checkState(parameters.size() == parameterTypes.size());
+            Preconditions.checkState(parameters.size() == parameterTypes.size());
             for (int i = 0; i < parameters.size(); i++) {
                 // We need to capture the parameter type of the variable we're concerned about,
                 // for later printing.  This is the only way to do it since we can't use

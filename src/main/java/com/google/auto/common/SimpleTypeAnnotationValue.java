@@ -20,7 +20,6 @@ import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.AnnotationValueVisitor;
 import javax.lang.model.type.TypeMirror;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static javax.lang.model.type.TypeKind.ARRAY;
 import static javax.lang.model.type.TypeKind.DECLARED;
 
@@ -32,7 +31,7 @@ public final class SimpleTypeAnnotationValue implements AnnotationValue {
     private final TypeMirror value;
 
     private SimpleTypeAnnotationValue(TypeMirror value) {
-        checkArgument(
+        Preconditions.checkArgument(
                 value.getKind().isPrimitive()
                         || value.getKind().equals(DECLARED)
                         || value.getKind().equals(ARRAY),
@@ -40,7 +39,7 @@ public final class SimpleTypeAnnotationValue implements AnnotationValue {
                 value.getKind(),
                 value);
         if (value.getKind().equals(DECLARED)) {
-            checkArgument(
+            Preconditions.checkArgument(
                     MoreTypes.asDeclared(value).getTypeArguments().isEmpty(),
                     "value must not be a parameterized type: %s",
                     value);

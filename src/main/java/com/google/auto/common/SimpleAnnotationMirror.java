@@ -16,9 +16,6 @@
 
 package com.google.auto.common;
 
-import com.google.common.base.Functions;
-import com.google.common.collect.Maps;
-
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.ElementKind;
@@ -26,9 +23,10 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static java.util.Objects.requireNonNull;
 import static javax.lang.model.util.ElementFilter.methodsIn;
 
 /** A representation of an annotation. */
@@ -39,11 +37,11 @@ public final class SimpleAnnotationMirror implements AnnotationMirror {
 
   private SimpleAnnotationMirror(
       TypeElement annotationType, Map<String, ? extends AnnotationValue> namedValues) {
-    checkArgument(
+    Preconditions.checkArgument(
         annotationType.getKind().equals(ElementKind.ANNOTATION_TYPE),
         "annotationType must be an annotation: %s",
         annotationType);
-    checkArgument(
+    Preconditions.checkArgument(
         methodsIn(annotationType.getEnclosedElements()).stream()
             .map(element -> element.getSimpleName().toString())
             .collect(Collectors.toSet())
@@ -54,10 +52,9 @@ public final class SimpleAnnotationMirror implements AnnotationMirror {
     this.annotationType = annotationType;
     this.namedValues = namedValues;
     this.elementValues =
-        Maps.toMap(
-            methodsIn(annotationType.getEnclosedElements()),
-            Functions.compose(
-                Functions.forMap(namedValues), element -> element.getSimpleName().toString()));
+            methodsIn(annotationType.getEnclosedElements())
+                    .stream().collect(Collectors.toMap(Function.identity(),
+                            element -> requireNonNull(namedValues.get(element.getSimpleName().toString()))));
   }
 
   @Override

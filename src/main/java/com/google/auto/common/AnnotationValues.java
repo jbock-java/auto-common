@@ -24,10 +24,10 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleAnnotationValueVisitor8;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 
 import static com.google.auto.common.MoreStreams.toImmutableList;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * A utility class for working with {@link AnnotationValue} instances.
@@ -170,7 +170,7 @@ public final class AnnotationValues {
         final Class<T> clazz;
 
         DefaultVisitor(Class<T> clazz) {
-            this.clazz = checkNotNull(clazz);
+            this.clazz = Objects.requireNonNull(clazz);
         }
 
         @Override
@@ -345,7 +345,7 @@ public final class AnnotationValues {
         final Function<AnnotationValue, T> visitT;
 
         ArrayVisitor(Function<AnnotationValue, T> visitT) {
-            this.visitT = checkNotNull(visitT);
+            this.visitT = Objects.requireNonNull(visitT);
         }
 
         @Override

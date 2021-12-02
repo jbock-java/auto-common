@@ -81,14 +81,6 @@ public class SimpleAnnotationMirrorTest {
     }
 
     @Test
-    public void defaultValue() {
-        TypeElement withDefaults = getTypeElement(AnnotationWithDefault.class);
-        AnnotationMirror annotation = SimpleAnnotationMirror.of(withDefaults);
-        assertThat(annotation.getElementValues()).hasSize(1);
-        assertThat(getOnlyElement(annotation.getElementValues().values()).getValue()).isEqualTo(3);
-    }
-
-    @Test
     public void overriddenDefaultValue() {
         TypeElement withDefaults = getTypeElement(AnnotationWithDefault.class);
         AnnotationMirror annotation =

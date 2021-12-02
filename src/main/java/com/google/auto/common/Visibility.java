@@ -22,8 +22,8 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.Modifier;
 import java.util.Set;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.Comparators.min;
+import static java.util.Objects.requireNonNull;
 import static javax.lang.model.element.ElementKind.PACKAGE;
 
 /**
@@ -51,7 +51,7 @@ public enum Visibility {
      * them.
      */
     public static Visibility ofElement(Element element) {
-        checkNotNull(element);
+        requireNonNull(element);
         // packages and module don't have modifiers, but they're obviously "public"
         if (element.getKind().equals(PACKAGE) || element.getKind().equals(MODULE)) {
             return PUBLIC;
@@ -73,7 +73,7 @@ public enum Visibility {
      * visibility of its enclosing elements.
      */
     public static Visibility effectiveVisibilityOfElement(Element element) {
-        checkNotNull(element);
+        requireNonNull(element);
         Visibility effectiveVisibility = PUBLIC;
         Element currentElement = element;
         while (currentElement != null) {

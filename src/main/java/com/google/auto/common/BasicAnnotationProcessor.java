@@ -50,8 +50,6 @@ import static com.google.auto.common.MoreElements.asPackage;
 import static com.google.auto.common.MoreStreams.toImmutableMap;
 import static com.google.auto.common.MoreStreams.toImmutableSet;
 import static com.google.auto.common.SuperficialValidation.validateElement;
-import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 import static com.google.common.collect.Iterables.transform;
 import static com.google.common.collect.Multimaps.filterKeys;
 import static java.util.Objects.requireNonNull;
@@ -161,7 +159,7 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
     }
 
     private ImmutableSet<TypeElement> getSupportedAnnotationTypeElements() {
-        checkState(steps != null);
+        Preconditions.checkState(steps != null);
         return steps.stream()
                 .flatMap(step -> getSupportedAnnotationTypeElements(step).stream())
                 .collect(toImmutableSet());
@@ -180,7 +178,7 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
      */
     @Override
     public final ImmutableSet<String> getSupportedAnnotationTypes() {
-        checkState(steps != null);
+        Preconditions.checkState(steps != null);
         return steps.stream()
                 .flatMap(step -> step.annotations().stream())
                 .collect(toImmutableSet());
@@ -188,9 +186,9 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
 
     @Override
     public final boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        checkState(elements != null);
-        checkState(messager != null);
-        checkState(steps != null);
+        Preconditions.checkState(elements != null);
+        Preconditions.checkState(messager != null);
+        Preconditions.checkState(steps != null);
 
         // If this is the last round, report all of the missing elements if there
         // were no errors raised in the round; otherwise reporting the missing
@@ -531,7 +529,7 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
         private final String name;
 
         private ElementName(Kind kind, Name name) {
-            this.kind = checkNotNull(kind);
+            this.kind = requireNonNull(kind);
             this.name = name.toString();
         }
 
