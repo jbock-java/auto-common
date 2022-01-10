@@ -28,6 +28,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.ErrorType;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleElementVisitor8;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -188,12 +189,17 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
     }
 
     /** Processes the valid elements, including those previously deferred by each step. */
-    private void process(Multimap<TypeElement, Element> validElements) {
+    private void process(Map<TypeElement, Set<Element>> validElements) {
         for (Step step : steps) {
             Set<TypeElement> annotationTypes = getSupportedAnnotationTypeElements(step);
-            Multimap<TypeElement, Element> stepElements = Multimap.create();
+            Map<TypeElement, Set<Element>> stepElements = new LinkedHashMap<>();
+            indexByAnnotation(elementsDeferredBySteps.getOrDefault(step, Set.of()), annotationTypes);
             stepElements.putAll(indexByAnnotation(elementsDeferredBySteps.getOrDefault(step, Set.of()), annotationTypes));
-            stepElements.putAll(validElements.filterKeys(annotationTypes::contains));
+            validElements.forEach((el, elements) -> {
+                if (annotationTypes.contains(el)) {
+                    stepElements.put(el, elements);
+                }
+            });
             if (stepElements.isEmpty()) {
                 elementsDeferredBySteps.remove(step);
             } else {
@@ -232,11 +238,11 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
      * Returns the valid annotated elements contained in all of the deferred elements. If none are
      * found for a deferred element, defers it again.
      */
-    private Multimap<TypeElement, Element> validElements(RoundEnvironment roundEnv) {
+    private Map<TypeElement, Set<Element>> validElements(RoundEnvironment roundEnv) {
         Set<ElementName> prevDeferredElementNames = Set.copyOf(deferredElementNames);
         deferredElementNames.clear();
 
-        Multimap<TypeElement, Element> deferredElementsByAnnotation = Multimap.create();
+        Map<TypeElement, Set<Element>> deferredElementsByAnnotation = new LinkedHashMap<>();
         for (ElementName deferredElementName : prevDeferredElementNames) {
             Optional<? extends Element> deferredElement = deferredElementName.getElement(elements);
             if (deferredElement.isPresent()) {
@@ -249,14 +255,14 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
             }
         }
 
-        Multimap<TypeElement, Element> validElements = Multimap.create();
+        Map<TypeElement, Set<Element>> validElements = new LinkedHashMap<>();
 
         Set<ElementName> validElementNames = new LinkedHashSet<>();
 
         // Look at the elements we've found and the new elements from this round and validate them.
         for (TypeElement annotationType : getSupportedAnnotationTypeElements()) {
             Set<? extends Element> roundElements = roundEnv.getElementsAnnotatedWith(annotationType);
-            Set<Element> prevRoundElements = deferredElementsByAnnotation.get(annotationType);
+            Set<Element> prevRoundElements = deferredElementsByAnnotation.getOrDefault(annotationType, Set.of());
             for (Element element : Stream.concat(roundElements.stream(), prevRoundElements.stream()).collect(toUnmodifiableSet())) {
                 ElementName elementName = ElementName.forAnnotatedElement(element);
                 boolean isValidElement =
@@ -265,7 +271,7 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
                                 && validateElement(
                                 element.getKind().equals(PACKAGE) ? element : getEnclosingType(element)));
                 if (isValidElement) {
-                    validElements.put(annotationType, element);
+                    validElements.merge(annotationType, Set.of(element), Util::mutableUnion);
                     validElementNames.add(elementName);
                 } else {
                     deferredElementNames.add(elementName);
@@ -276,10 +282,10 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
         return validElements;
     }
 
-    private Multimap<TypeElement, Element> indexByAnnotation(
+    private Map<TypeElement, Set<Element>> indexByAnnotation(
             Set<ElementName> annotatedElements, Set<TypeElement> annotationTypes) {
-        Multimap<TypeElement, Element> deferredElements =
-                Multimap.create();
+        Map<TypeElement, Set<Element>> deferredElements =
+                new LinkedHashMap<>();
         for (ElementName elementName : annotatedElements) {
             Optional<? extends Element> element = elementName.getElement(elements);
             if (element.isPresent()) {
@@ -310,7 +316,7 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
     private static void findAnnotatedElements(
             Element element,
             Set<TypeElement> annotationTypes,
-            Multimap<TypeElement, Element> annotatedElements) {
+            Map<TypeElement, Set<Element>> annotatedElements) {
         for (Element enclosedElement : element.getEnclosedElements()) {
             if (!enclosedElement.getKind().isClass() && !enclosedElement.getKind().isInterface()) {
                 findAnnotatedElements(enclosedElement, annotationTypes, annotatedElements);
@@ -325,7 +331,7 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
         }
         for (TypeElement annotationType : annotationTypes) {
             if (isAnnotationPresent(element, annotationType)) {
-                annotatedElements.put(annotationType, element);
+                annotatedElements.merge(annotationType, Set.of(element), Util::mutableUnion);
             }
         }
     }
@@ -364,14 +370,11 @@ public abstract class BasicAnnotationProcessor extends AbstractProcessor {
     }
 
     private static Map<String, Set<Element>> toClassNameKeyedMultimap(
-            Multimap<TypeElement, Element> elements) {
-        Multimap<String, Element> builder = Multimap.create();
-        elements
-                .asMap()
-                .forEach(
-                        (annotation, element) ->
-                                builder.putAll(annotation.getQualifiedName().toString(), element));
-        return builder.asMap();
+            Map<TypeElement, Set<Element>> m) {
+        return m.entrySet().stream().map(e -> new AbstractMap.SimpleImmutableEntry<>(
+                        e.getKey().getQualifiedName().toString(),
+                        e.getValue()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, Util::expectNoInvocation, LinkedHashMap::new));
     }
 
     /**
