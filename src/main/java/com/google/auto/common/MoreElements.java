@@ -443,19 +443,15 @@ public final class MoreElements {
      *     {@code javax.annotation.processing.AbstractProcessor#processingEnv processingEnv}<!--
      *     -->.{@link javax.annotation.processing.ProcessingEnvironment#getTypeUtils
      *     getTypeUtils()}
-     * @param elementUtils an {@link Elements} object, typically returned by
-     *     {@code javax.annotation.processing.AbstractProcessor#processingEnv processingEnv}<!--
-     *     -->.{@link javax.annotation.processing.ProcessingEnvironment#getElementUtils
-     *     getElementUtils()}
      */
     public static Set<ExecutableElement> getAllMethods(
-            TypeElement type, Types typeUtils, Elements elementUtils) {
+            TypeElement type, Types typeUtils) {
         return getAllMethods(type, new ExplicitOverrides(typeUtils));
     }
 
     private static Set<ExecutableElement> getAllMethods(
             TypeElement type, Overrides overrides) {
-        Multimap<String, ExecutableElement> methodMap = Multimap.create();
+        Multimap<String, ExecutableElement> methodMap = new Multimap<>();
         getAllMethods(type, methodMap);
         // Find methods that are overridden. We do this using `Elements.overrides`, which means
         // that it is inherently a quadratic operation, since we have to compare every method against

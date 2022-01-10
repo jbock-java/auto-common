@@ -14,14 +14,14 @@ class Util {
         return union(set1, set2);
     }
 
-    public static <E> Set<E> union(Set<E> set1, Set<E> set2) {
+    static <E> Set<E> union(Set<E> set1, Set<E> set2) {
         Set<E> result = new LinkedHashSet<>(Math.max(4, (int) (1.5 * (set1.size() + set2.size()))));
         result.addAll(set1);
         result.addAll(set2);
         return result;
     }
 
-    public static <E> Set<E> expectNoInvocation(Set<E> set1, Set<E> set2) {
+    static <E> Set<E> expectNoInvocation(Set<E> set1, Set<E> set2) {
         throw new AssertionError("expecting no invocation");
     }
 }

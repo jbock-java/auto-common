@@ -378,9 +378,8 @@ public class MoreElementsTest {
         TypeMirror intMirror = types.getPrimitiveType(TypeKind.INT);
         TypeMirror longMirror = types.getPrimitiveType(TypeKind.LONG);
         TypeElement childType = elements.getTypeElement(Child.class.getCanonicalName());
-        @SuppressWarnings("deprecation")
         Set<ExecutableElement> childTypeMethods =
-                MoreElements.getAllMethods(childType, types, elements);
+                MoreElements.getAllMethods(childType, types);
         Set<ExecutableElement> objectMethods = allMethodsFromObject();
         assertThat(childTypeMethods).containsAtLeastElementsIn(objectMethods);
         Set<ExecutableElement> nonObjectMethods = Sets.difference(childTypeMethods, objectMethods);
