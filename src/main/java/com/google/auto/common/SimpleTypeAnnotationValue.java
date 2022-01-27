@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.auto.common;
+package io.jbock.auto.common;
 
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.AnnotationValueVisitor;

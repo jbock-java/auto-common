@@ -1,4 +1,4 @@
-package com.google.auto.common;
+package io.jbock.auto.common;
 
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -15,13 +15,16 @@ class Util {
     }
 
     static <E> Set<E> union(Set<E> set1, Set<E> set2) {
-        Set<E> result = new LinkedHashSet<>(Math.max(4, (int) (1.5 * (set1.size() + set2.size()))));
+        if (set2.isEmpty()) {
+            return set1;
+        }
+        Set<E> result = new LinkedHashSet<>(Math.max(8, (int) (1.4 * (set1.size() + set2.size()))));
         result.addAll(set1);
         result.addAll(set2);
         return result;
     }
 
     static <E> Set<E> expectNoInvocation(Set<E> set1, Set<E> set2) {
-        throw new AssertionError("expecting no invocation");
+        throw new IllegalStateException("expecting no invocation");
     }
 }

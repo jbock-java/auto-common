@@ -12,7 +12,7 @@
  * the License.
  */
 
-package com.google.auto.common;
+package io.jbock.auto.common;
 
 final class Preconditions {
     private Preconditions() {

@@ -1,4 +1,4 @@
-package com.google.auto.common;
+package io.jbock.auto.common;
 
 import java.util.Iterator;
 import java.util.Objects;

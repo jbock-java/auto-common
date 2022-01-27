@@ -1,4 +1,4 @@
-package com.google.auto.common;
+package io.jbock.auto.common;
 
 import java.util.Objects;
 import java.util.function.BiPredicate;

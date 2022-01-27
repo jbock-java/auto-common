@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.auto.common;
+package io.jbock.auto.common;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.testing.compile.CompilationRule;

@@ -1,5 +1,5 @@
-module auto.common {
+module io.jbock.auto.common {
     requires java.compiler;
 
-    exports com.google.auto.common;
+    exports io.jbock.auto.common;
 }

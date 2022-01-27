@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.auto.common;
+package io.jbock.auto.common;
 
 import com.google.testing.compile.CompilationRule;
 import org.junit.Rule;
@@ -26,11 +26,11 @@ import javax.lang.model.util.Elements;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import static com.google.auto.common.Visibility.DEFAULT;
-import static com.google.auto.common.Visibility.PRIVATE;
-import static com.google.auto.common.Visibility.PROTECTED;
-import static com.google.auto.common.Visibility.PUBLIC;
 import static com.google.common.truth.Truth.assertThat;
+import static io.jbock.auto.common.Visibility.DEFAULT;
+import static io.jbock.auto.common.Visibility.PRIVATE;
+import static io.jbock.auto.common.Visibility.PROTECTED;
+import static io.jbock.auto.common.Visibility.PUBLIC;
 
 @RunWith(JUnit4.class)
 public class VisibilityTest {

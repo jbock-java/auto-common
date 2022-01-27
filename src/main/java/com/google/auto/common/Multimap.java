@@ -1,4 +1,4 @@
-package com.google.auto.common;
+package io.jbock.auto.common;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -6,8 +6,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A simple multimap that remembers the insertion order,
- * as an alternative to a full copy of guava's {@code ImmutableMultimap}.
+ * A simple multimap that remembers the insertion order.
  *
  * @param <K> key type
  * @param <V> value type

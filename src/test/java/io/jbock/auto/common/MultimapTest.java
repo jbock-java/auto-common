@@ -1,4 +1,4 @@
-package com.google.auto.common;
+package io.jbock.auto.common;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

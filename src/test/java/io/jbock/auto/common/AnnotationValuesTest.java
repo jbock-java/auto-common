@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.google.auto.common;
+package io.jbock.auto.common;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -357,28 +357,28 @@ public final class AnnotationValuesTest {
     public void toSourceString() {
         ImmutableMap<String, String> inputs =
                 ImmutableMap.<String, String>builder()
-                        .put("classValue", "com.google.auto.common.AnnotationValuesTest.InsideClassA.class")
+                        .put("classValue", "io.jbock.auto.common.AnnotationValuesTest.InsideClassA.class")
                         .put(
                                 "classValues",
-                                "{com.google.auto.common.AnnotationValuesTest.InsideClassA.class,"
-                                        + " com.google.auto.common.AnnotationValuesTest.InsideClassB.class}")
+                                "{io.jbock.auto.common.AnnotationValuesTest.InsideClassA.class,"
+                                        + " io.jbock.auto.common.AnnotationValuesTest.InsideClassB.class}")
                         .put(
                                 "genericClassValue",
-                                "com.google.auto.common.AnnotationValuesTest.GenericClass.class")
+                                "io.jbock.auto.common.AnnotationValuesTest.GenericClass.class")
                         .put(
                                 "insideAnnotationValue",
-                                "@com.google.auto.common.AnnotationValuesTest.InsideAnnotation(19)")
+                                "@io.jbock.auto.common.AnnotationValuesTest.InsideAnnotation(19)")
                         .put(
                                 "insideAnnotationValues",
-                                "{@com.google.auto.common.AnnotationValuesTest.InsideAnnotation(20),"
-                                        + " @com.google.auto.common.AnnotationValuesTest.InsideAnnotation(21)}")
+                                "{@io.jbock.auto.common.AnnotationValuesTest.InsideAnnotation(20),"
+                                        + " @io.jbock.auto.common.AnnotationValuesTest.InsideAnnotation(21)}")
                         .put("stringValue", "\"hello\"")
                         .put("stringValues", "{\"it\\'s\", \"me\"}")
-                        .put("enumValue", "com.google.auto.common.AnnotationValuesTest.Foo.BAR")
+                        .put("enumValue", "io.jbock.auto.common.AnnotationValuesTest.Foo.BAR")
                         .put(
                                 "enumValues",
-                                "{com.google.auto.common.AnnotationValuesTest.Foo.BAZ,"
-                                        + " com.google.auto.common.AnnotationValuesTest.Foo.BAH}")
+                                "{io.jbock.auto.common.AnnotationValuesTest.Foo.BAZ,"
+                                        + " io.jbock.auto.common.AnnotationValuesTest.Foo.BAH}")
                         .put("intValue", "5")
                         .put("intValues", "{1, 2}")
                         .put("longValue", "6L")
@@ -409,7 +409,7 @@ public final class AnnotationValuesTest {
                                 .collect(
                                         joining(
                                                 ", ",
-                                                "@com.google.auto.common.AnnotationValuesTest.MultiValueAnnotation(",
+                                                "@io.jbock.auto.common.AnnotationValuesTest.MultiValueAnnotation(",
                                                 ")")));
     }
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.auto.common;
+package io.jbock.auto.common;
 
 import com.google.common.testing.EqualsTester;
 import com.google.common.testing.NullPointerTester;
@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.function.Predicate;
 
-import static com.google.auto.common.AnnotationMirrorsTest.equivalenceTesterOf;
+import static io.jbock.auto.common.AnnotationMirrorsTest.equivalenceTesterOf;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
